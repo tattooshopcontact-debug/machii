@@ -6,6 +6,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CityPicker } from '@/components/CityPicker';
 import { Button, Card, LegalBanner, Screen, Text } from '@/components/ui';
+import { cityToPoint, parseDepartureTime } from '@/lib/geo';
+import { supabase } from '@/lib/supabase';
+import { useAuthStore } from '@/stores/authStore';
 import { colors, fonts, fontSize, radius, spacing } from '@/theme';
 
 const DAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
@@ -13,6 +16,7 @@ const DAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 export default function CreateTripScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const user = useAuthStore((s) => s.user);
 
   const [origin, setOrigin] = useState<string | null>(null);
   const [destination, setDestination] = useState<string | null>(null);
@@ -21,6 +25,7 @@ export default function CreateTripScreen() {
   const [time, setTime] = useState('18:00');
   const [seats, setSeats] = useState(3);
   const [price, setPrice] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const valid = !!origin && !!destination && origin !== destination;
 
@@ -28,11 +33,52 @@ export default function CreateTripScreen() {
     setDays((d) => (d.includes(i) ? d.filter((x) => x !== i) : [...d, i]));
   }
 
-  function onPublish() {
-    if (!valid) return;
-    Alert.alert('Trajet publié', `${origin} → ${destination} a été publié.`, [
-      { text: 'OK', onPress: () => router.back() },
-    ]);
+  async function onPublish() {
+    if (!valid || !origin || !destination) return;
+    if (!user) {
+      Alert.alert('Erreur', 'Connecte-toi avant de publier un trajet.');
+      return;
+    }
+
+    const originPoint = cityToPoint(origin);
+    const destPoint = cityToPoint(destination);
+    if (!originPoint || !destPoint) {
+      Alert.alert('Erreur', 'Ville inconnue (coordonnées manquantes).');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const departureTime = parseDepartureTime(time);
+      const parsedPrice = price.trim() === '' ? null : Number(price);
+      if (parsedPrice !== null && Number.isNaN(parsedPrice)) {
+        throw new Error('Prix invalide.');
+      }
+
+      const { error } = await supabase.from('trips').insert({
+        driver_id: user.id,
+        origin_label: origin,
+        destination_label: destination,
+        origin: originPoint,
+        destination: destPoint,
+        departure_time: departureTime,
+        seats_total: seats,
+        seats_available: seats,
+        price_per_seat: parsedPrice,
+        status: 'open',
+        is_recurring: recurring,
+      });
+      if (error) throw error;
+
+      Alert.alert('Trajet publié', `${origin} → ${destination} a été publié.`, [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      Alert.alert('Publication impossible', msg);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -128,7 +174,13 @@ export default function CreateTripScreen() {
 
         <LegalBanner compact />
 
-        <Button label="Publier le trajet" onPress={onPublish} disabled={!valid} style={{ marginTop: spacing.sm }} />
+        <Button
+          label="Publier le trajet"
+          onPress={onPublish}
+          disabled={!valid || submitting}
+          loading={submitting}
+          style={{ marginTop: spacing.sm }}
+        />
       </Screen>
     </View>
   );

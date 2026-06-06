@@ -1,15 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CityPicker } from '@/components/CityPicker';
 import { TripCard } from '@/components/TripCard';
 import { Card, Text } from '@/components/ui';
-import { DEMO_MATCH, DEMO_TRIPS } from '@/constants/mock';
+import { useSearchTrips } from '@/lib/trips';
 import { useTripSearchStore } from '@/stores/tripSearchStore';
 import { colors, fonts, fontSize, radius, spacing, TAB_BAR_HEIGHT } from '@/theme';
-import { Pressable } from 'react-native';
 
 const FILTERS = ['⇅ Heure', '≤ 30 DT', '2 places', 'Vérifié'];
 
@@ -17,6 +16,7 @@ export default function SearchScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { origin, destination, setOrigin, setDestination, swap } = useTripSearchStore();
+  const { data: trips, isLoading, error } = useSearchTrips(origin, destination);
 
   return (
     <View style={styles.root}>
@@ -52,17 +52,34 @@ export default function SearchScreen() {
           ))}
         </ScrollView>
 
-        {/* Suggestion match intelligent (différenciateur Machii) */}
-        <Text variant="label" color={colors.textSecondary} style={{ marginTop: spacing.xs }}>
-          ⚡ Suggestion sur ta route
-        </Text>
-        <TripCard trip={DEMO_MATCH} asMatch onPress={() => router.push(`/trip/${DEMO_MATCH.id}`)} />
-
-        {/* Trajets directs */}
+        {/* Liste des trajets en DB */}
         <Text variant="label" color={colors.textSecondary} style={{ marginTop: spacing.sm }}>
-          Trajets directs · {DEMO_TRIPS.length}
+          Trajets disponibles · {trips?.length ?? 0}
         </Text>
-        {DEMO_TRIPS.map((trip) => (
+
+        {isLoading && (
+          <View style={{ paddingVertical: spacing.xl, alignItems: 'center' }}>
+            <ActivityIndicator color={colors.primary} />
+          </View>
+        )}
+
+        {error && (
+          <Card style={styles.hint}>
+            <Text variant="body" color={colors.textSecondary}>
+              ⚠️ Impossible de charger les trajets : {error instanceof Error ? error.message : 'erreur réseau'}
+            </Text>
+          </Card>
+        )}
+
+        {!isLoading && trips && trips.length === 0 && (
+          <Card style={styles.hint}>
+            <Text variant="body" color={colors.textSecondary}>
+              Aucun trajet pour le moment. Reviens bientôt ou publie une demande.
+            </Text>
+          </Card>
+        )}
+
+        {trips?.map((trip) => (
           <TripCard key={trip.id} trip={trip} onPress={() => router.push(`/trip/${trip.id}`)} />
         ))}
 

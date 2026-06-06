@@ -9,20 +9,27 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClientProvider } from '@tanstack/react-query';
 
 import { queryClient } from '@/lib/queryClient';
+import { useAuthStore } from '@/stores/authStore';
 import { colors, interFontMap } from '@/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(interFontMap);
+  const loadSession = useAuthStore((s) => s.loadSession);
+  const hydrated = useAuthStore((s) => s.hydrated);
 
   useEffect(() => {
-    if (fontsLoaded || fontError) {
+    loadSession();
+  }, [loadSession]);
+
+  useEffect(() => {
+    if ((fontsLoaded || fontError) && hydrated) {
       SplashScreen.hideAsync().catch(() => {});
     }
-  }, [fontsLoaded, fontError]);
+  }, [fontsLoaded, fontError, hydrated]);
 
-  if (!fontsLoaded && !fontError) {
+  if ((!fontsLoaded && !fontError) || !hydrated) {
     return null;
   }
 

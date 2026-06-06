@@ -1,38 +1,49 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Text } from '@/components/ui';
-import { DEMO_PROFILE } from '@/constants/mock';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, fonts, fontSize, radius, spacing } from '@/theme';
 
 export default function OtpScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { pendingPhone, setUser } = useAuthStore();
+  const pendingPhone = useAuthStore((s) => s.pendingPhone);
+  const signInAnonymous = useAuthStore((s) => s.signInAnonymous);
   const [code, setCode] = useState('');
+  const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const valid = code.replace(/\D/g, '').length >= 4;
+  const codeOk = code.replace(/\D/g, '').length >= 4;
+  const nameOk = name.trim().length >= 2;
+  const valid = codeOk && nameOk;
 
-  function onVerify() {
-    if (!valid) return;
+  async function onVerify() {
+    if (!valid || !pendingPhone) return;
     setLoading(true);
-    // Vrai flux :
-    //   const { data, error } = await supabase.auth.verifyOtp({ phone: pendingPhone, token: code, type: 'sms' })
-    //   puis charger le profil depuis la table `profiles`.
-    // V1 démo : on connecte avec le profil de démonstration.
-    setTimeout(() => {
-      setUser({ ...DEMO_PROFILE, phone: pendingPhone ?? DEMO_PROFILE.phone });
+    try {
+      // V0 : le code OTP est mocké côté client (n'importe quel 4 chiffres).
+      // Auth Supabase anonyme → JWT + ligne profiles créée par trigger.
+      await signInAnonymous(pendingPhone, name);
       router.replace('/(tabs)');
-    }, 500);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      Alert.alert('Connexion impossible', msg);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={[styles.content, { paddingTop: insets.top + spacing.xxl, paddingBottom: insets.bottom + spacing.xl }]}>
+      <View
+        style={[
+          styles.content,
+          { paddingTop: insets.top + spacing.xxl, paddingBottom: insets.bottom + spacing.xl },
+        ]}
+      >
         <Text variant="title" color={colors.textOnPrimary}>
           Vérifie ton numéro
         </Text>
@@ -51,6 +62,19 @@ export default function OtpScreen() {
           autoFocus
         />
 
+        <Text variant="label" color={colors.textOnPrimary} style={{ marginBottom: spacing.xs }}>
+          Ton prénom
+        </Text>
+        <TextInput
+          value={name}
+          onChangeText={setName}
+          placeholder="ex : Ahmed"
+          placeholderTextColor="rgba(255,255,255,0.4)"
+          maxLength={40}
+          autoCapitalize="words"
+          style={styles.nameInput}
+        />
+
         <Button label="Se connecter" onPress={onVerify} disabled={!valid} loading={loading} />
 
         <Pressable onPress={() => router.back()} style={styles.resend}>
@@ -60,7 +84,7 @@ export default function OtpScreen() {
         </Pressable>
 
         <Text variant="caption" color="rgba(255,255,255,0.5)" center style={{ marginTop: spacing.md }}>
-          Mode démo : saisis n'importe quel code à 4 chiffres.
+          Mode démo : n'importe quel code à 4 chiffres marche.
         </Text>
       </View>
     </KeyboardAvoidingView>
@@ -81,7 +105,20 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     fontSize: fontSize.xxl,
     color: colors.textOnPrimary,
-    marginVertical: spacing.xl,
+    marginTop: spacing.xl,
+    marginBottom: spacing.lg,
+  },
+  nameInput: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    fontFamily: fonts.regular,
+    fontSize: fontSize.lg,
+    color: colors.textOnPrimary,
+    marginBottom: spacing.xl,
   },
   resend: { alignSelf: 'center', marginTop: spacing.lg, padding: spacing.sm },
 });
