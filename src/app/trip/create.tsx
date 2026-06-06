@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CityPicker } from '@/components/CityPicker';
 import { Button, Card, LegalBanner, Screen, Text } from '@/components/ui';
+import { describeError } from '@/lib/errors';
 import { cityToPoint, parseDepartureTime } from '@/lib/geo';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
@@ -74,8 +75,7 @@ export default function CreateTripScreen() {
         { text: 'OK', onPress: () => router.back() },
       ]);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      Alert.alert('Publication impossible', msg);
+      Alert.alert('Publication impossible', describeError(e));
     } finally {
       setSubmitting(false);
     }

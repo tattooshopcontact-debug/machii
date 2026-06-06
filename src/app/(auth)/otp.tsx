@@ -4,6 +4,7 @@ import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Text } from '@/components/ui';
+import { describeError } from '@/lib/errors';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, fonts, fontSize, radius, spacing } from '@/theme';
 
@@ -29,8 +30,7 @@ export default function OtpScreen() {
       await signInAnonymous(pendingPhone, name);
       router.replace('/(tabs)');
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      Alert.alert('Connexion impossible', msg);
+      Alert.alert('Connexion impossible', describeError(e));
     } finally {
       setLoading(false);
     }

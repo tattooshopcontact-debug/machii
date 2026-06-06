@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconCar, IconClock, IconLock, IconStar } from '@/components/icons';
 import { Avatar, Badge, Button, Card, LegalBanner, RoutePoints, Screen, Text } from '@/components/ui';
 import { useCreateBooking } from '@/lib/bookings';
+import { describeError } from '@/lib/errors';
 import { formatDay, formatPrice, formatTime } from '@/lib/format';
 import { useTrip } from '@/lib/trips';
 import { useAuthStore } from '@/stores/authStore';
@@ -35,10 +36,7 @@ export default function TripDetailScreen() {
             [{ text: 'OK', onPress: () => router.back() }],
           );
         },
-        onError: (e: unknown) => {
-          const msg = e instanceof Error ? e.message : String(e);
-          Alert.alert('Demande impossible', msg);
-        },
+        onError: (e: unknown) => Alert.alert('Demande impossible', describeError(e)),
       },
     );
   }

@@ -11,6 +11,7 @@ import {
   useUpdateBookingStatus,
   type BookingWithRelations,
 } from '@/lib/bookings';
+import { describeError } from '@/lib/errors';
 import { formatDay, formatTime } from '@/lib/format';
 import { useMyPublishedTrips } from '@/lib/trips';
 import { useAuthStore } from '@/stores/authStore';
@@ -180,7 +181,7 @@ function IncomingBookingsList({
         text: 'Accepter',
         onPress: () =>
           updateStatus.mutate({ bookingId: b.id, status: 'accepted' }, {
-            onError: (e) => Alert.alert('Erreur', e instanceof Error ? e.message : String(e)),
+            onError: (e) => Alert.alert('Erreur', describeError(e)),
           }),
       },
     ]);
@@ -193,7 +194,7 @@ function IncomingBookingsList({
         style: 'destructive',
         onPress: () =>
           updateStatus.mutate({ bookingId: b.id, status: 'rejected' }, {
-            onError: (e) => Alert.alert('Erreur', e instanceof Error ? e.message : String(e)),
+            onError: (e) => Alert.alert('Erreur', describeError(e)),
           }),
       },
     ]);
