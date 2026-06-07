@@ -8,9 +8,7 @@ import { TripCard } from '@/components/TripCard';
 import { Card, Text } from '@/components/ui';
 import { useSearchTrips } from '@/lib/trips';
 import { useTripSearchStore } from '@/stores/tripSearchStore';
-import { colors, fonts, fontSize, radius, spacing, TAB_BAR_HEIGHT } from '@/theme';
-
-const FILTERS = ['⇅ Heure', '≤ 30 DT', '2 places', 'Vérifié'];
+import { colors, radius, spacing, TAB_BAR_HEIGHT } from '@/theme';
 
 export default function SearchScreen() {
   const router = useRouter();
@@ -43,15 +41,6 @@ export default function SearchScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: spacing.lg, paddingBottom: TAB_BAR_HEIGHT + spacing.xl, gap: spacing.md }}
       >
-        {/* Filtres rapides */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
-          {FILTERS.map((f) => (
-            <Pressable key={f} style={styles.chip}>
-              <Text style={styles.chipText}>{f}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-
         {/* Liste des trajets en DB */}
         <Text variant="label" color={colors.textSecondary} style={{ marginTop: spacing.sm }}>
           Trajets disponibles · {trips?.length ?? 0}
@@ -113,15 +102,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  filters: { gap: spacing.sm, paddingVertical: spacing.xs },
-  chip: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-  },
-  chipText: { fontFamily: fonts.medium, fontSize: fontSize.sm, color: colors.textPrimary },
   hint: { backgroundColor: colors.surfaceAlt },
 });

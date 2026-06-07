@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { TripCard } from '@/components/TripCard';
 import { Avatar, Button, Card, Logo, Text } from '@/components/ui';
-import { DEMO_TRIPS } from '@/constants/mock';
+import { useSearchTrips } from '@/lib/trips';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, radius, shadows, spacing, TAB_BAR_HEIGHT } from '@/theme';
 
@@ -13,6 +13,9 @@ export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
+  // Aperçu : 3 derniers trajets ouverts, sans filtre ville.
+  const { data: tripsAll, isLoading: tripsLoading } = useSearchTrips(null, null);
+  const tripsPreview = (tripsAll ?? []).filter((t) => t.driver.id !== user?.id).slice(0, 3);
 
   return (
     <View style={styles.root}>
@@ -50,16 +53,30 @@ export default function HomeScreen() {
           </Card>
         </View>
 
-        {/* Sur ta route */}
+        {/* Sur ta route — vrais trajets DB, on cache les siens */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text variant="heading">Sur ta route</Text>
+            <Text variant="heading">Trajets disponibles</Text>
             <Pressable onPress={() => router.push('/(tabs)/search')}>
               <Text variant="label" color={colors.primary}>Tout voir</Text>
             </Pressable>
           </View>
 
-          {DEMO_TRIPS.map((trip) => (
+          {tripsLoading && (
+            <View style={{ paddingVertical: spacing.xl, alignItems: 'center' }}>
+              <ActivityIndicator color={colors.primary} />
+            </View>
+          )}
+
+          {!tripsLoading && tripsPreview.length === 0 && (
+            <Card style={{ backgroundColor: colors.surfaceAlt }}>
+              <Text variant="body" color={colors.textSecondary}>
+                Aucun trajet ouvert pour le moment. Reviens bientôt ou publie le tien.
+              </Text>
+            </Card>
+          )}
+
+          {tripsPreview.map((trip) => (
             <TripCard key={trip.id} trip={trip} onPress={() => router.push(`/trip/${trip.id}`)} />
           ))}
         </View>

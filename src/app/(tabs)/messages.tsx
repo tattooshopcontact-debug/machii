@@ -1,53 +1,33 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, View } from 'react-native';
 
-import { Avatar, Card, Screen, ScreenHeader, Text } from '@/components/ui';
-import { DEMO_CONVERSATIONS } from '@/constants/mock';
-import { formatTime } from '@/lib/format';
-import { colors, fonts, fontSize, spacing } from '@/theme';
+import { Card, Screen, ScreenHeader, Text } from '@/components/ui';
+import { colors, spacing } from '@/theme';
 
 export default function MessagesScreen() {
   return (
     <View style={styles.root}>
-      <ScreenHeader title="Messages" />
-      <Screen tabBarSpacing contentStyle={{ gap: spacing.sm, paddingTop: spacing.lg }}>
-        {DEMO_CONVERSATIONS.map((c) => (
-          <Card key={c.id} padded={false} style={styles.row}>
-            <View style={styles.rowInner}>
-              <Avatar name={c.withName} tint={c.withTint} size={48} />
-              <View style={styles.body}>
-                <View style={styles.line}>
-                  <Text variant="subtitle" numberOfLines={1} style={{ flex: 1 }}>
-                    {c.withName}
-                  </Text>
-                  <Text variant="caption">{formatTime(c.lastAt)}</Text>
-                </View>
-                <View style={styles.line}>
-                  <Text
-                    variant="body"
-                    color={c.unread ? colors.textPrimary : colors.textSecondary}
-                    numberOfLines={1}
-                    style={{ flex: 1, fontFamily: c.unread ? fonts.medium : fonts.regular }}
-                  >
-                    {c.lastMessage}
-                  </Text>
-                  {c.unread > 0 && (
-                    <View style={styles.badge}>
-                      <Text style={styles.badgeText}>{c.unread}</Text>
-                    </View>
-                  )}
-                </View>
-              </View>
-            </View>
-          </Card>
-        ))}
-
-        <View style={styles.note}>
-          <Ionicons name="shield-checkmark-outline" size={16} color={colors.textSecondary} />
-          <Text variant="caption" style={{ flex: 1 }}>
-            Le chat in-app protège tes coordonnées : le partage de numéros est bloqué automatiquement.
+      <ScreenHeader title="Chat" />
+      <Screen tabBarSpacing contentStyle={{ gap: spacing.md, paddingTop: spacing.xl }}>
+        <Card style={styles.empty}>
+          <View style={styles.iconWrap}>
+            <Ionicons name="chatbubbles-outline" size={36} color={colors.primary} />
+          </View>
+          <Text variant="title" center style={{ marginTop: spacing.md }}>
+            Le chat arrive bientôt
           </Text>
-        </View>
+          <Text variant="body" color={colors.textSecondary} center style={{ marginTop: spacing.sm }}>
+            Tu pourras échanger en sécurité avec ton conducteur ou ton passager
+            directement dans l'app, sans donner ton vrai numéro avant l'acceptation.
+          </Text>
+          <View style={styles.note}>
+            <Ionicons name="information-circle-outline" size={16} color={colors.textSecondary} />
+            <Text variant="caption" color={colors.textSecondary} style={{ flex: 1 }}>
+              En attendant, le numéro de téléphone de l'autre partie s'affiche
+              dans « Mes trajets » une fois la demande acceptée.
+            </Text>
+          </View>
+        </Card>
       </Screen>
     </View>
   );
@@ -55,19 +35,22 @@ export default function MessagesScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
-  row: { overflow: 'hidden' },
-  rowInner: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md },
-  body: { flex: 1, gap: 4 },
-  line: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  badge: {
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
-    paddingHorizontal: 6,
-    backgroundColor: colors.accent,
+  empty: { alignItems: 'center', paddingVertical: spacing.xxl, paddingHorizontal: spacing.lg },
+  iconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: colors.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  badgeText: { fontFamily: fonts.bold, fontSize: fontSize.xs, color: colors.primary },
-  note: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center', marginTop: spacing.md, paddingHorizontal: spacing.xs },
+  note: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    alignItems: 'flex-start',
+    marginTop: spacing.xl,
+    backgroundColor: colors.surfaceAlt,
+    padding: spacing.md,
+    borderRadius: 12,
+  },
 });
