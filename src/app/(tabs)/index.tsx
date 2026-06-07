@@ -9,6 +9,9 @@ import { useSearchTrips } from '@/lib/trips';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, radius, shadows, spacing, TAB_BAR_HEIGHT } from '@/theme';
 
+/** Villes mises en avant sous la recherche (axe prioritaire + côte). */
+const POPULAR_DESTINATIONS = ['Tunis', 'Sousse', 'Sfax', 'Hammamet', 'Nabeul', 'Djerba'];
+
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -16,6 +19,8 @@ export default function HomeScreen() {
   // Aperçu : 3 derniers trajets ouverts, sans filtre ville.
   const { data: tripsAll, isLoading: tripsLoading } = useSearchTrips(null, null);
   const tripsPreview = (tripsAll ?? []).filter((t) => t.driver.id !== user?.id).slice(0, 3);
+
+  const firstName = (user?.fullName ?? '').split(' ')[0];
 
   return (
     <View style={styles.root}>
@@ -34,20 +39,32 @@ export default function HomeScreen() {
               size={40}
             />
           </View>
+
+          <Text variant="bodyMedium" color="rgba(255,255,255,0.75)" style={styles.hello}>
+            Salut {firstName} 👋
+          </Text>
           <Text variant="title" color={colors.textOnPrimary} style={styles.greeting}>
-            Salut {user?.fullName ?? ''} 👋{'\n'}Où veux-tu aller ?
+            Où veux-tu aller ?
           </Text>
 
           {/* Carte de recherche flottante */}
           <Card elevation="floating" style={styles.searchCard}>
             <Pressable style={styles.field} onPress={() => router.push('/(tabs)/search')}>
               <View style={[styles.dot, { backgroundColor: colors.accentSecondary }]} />
-              <Text variant="bodyMedium" color={colors.textSecondary}>Départ</Text>
+              <View style={{ flex: 1 }}>
+                <Text variant="caption">Départ</Text>
+                <Text variant="bodyMedium" color={colors.textMuted}>Choisir une ville</Text>
+              </View>
+              <Ionicons name="chevron-down" size={18} color={colors.textMuted} />
             </Pressable>
             <View style={styles.divider} />
             <Pressable style={styles.field} onPress={() => router.push('/(tabs)/search')}>
               <View style={[styles.dot, { backgroundColor: colors.primary }]} />
-              <Text variant="bodyMedium" color={colors.textSecondary}>Arrivée</Text>
+              <View style={{ flex: 1 }}>
+                <Text variant="caption">Arrivée</Text>
+                <Text variant="bodyMedium" color={colors.textMuted}>Choisir une ville</Text>
+              </View>
+              <Ionicons name="chevron-down" size={18} color={colors.textMuted} />
             </Pressable>
             <Button
               label="Rechercher un trajet"
@@ -58,10 +75,50 @@ export default function HomeScreen() {
           </Card>
         </View>
 
+        {/* Destinations populaires — pastilles scroll horizontal */}
+        <View style={styles.popularBlock}>
+          <Text variant="label" color={colors.textSecondary} style={styles.popularTitle}>
+            Destinations populaires
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipsRow}
+          >
+            {POPULAR_DESTINATIONS.map((city) => (
+              <Pressable
+                key={city}
+                style={styles.chip}
+                onPress={() => router.push('/(tabs)/search')}
+              >
+                <Ionicons name="location" size={14} color={colors.accentSecondary} />
+                <Text variant="label" color={colors.primary}>{city}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Bandeau conducteur */}
+        <Pressable style={styles.driverBanner} onPress={() => router.push('/trip/create')}>
+          <View style={styles.driverIcon}>
+            <Ionicons name="car-sport" size={22} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text variant="subtitle">Tu conduis ?</Text>
+            <Text variant="caption" color={colors.textSecondary}>
+              Publie ton trajet et partage les frais
+            </Text>
+          </View>
+          <Ionicons name="arrow-forward" size={20} color={colors.primary} />
+        </Pressable>
+
         {/* Sur ta route — vrais trajets DB, on cache les siens */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text variant="heading">Trajets disponibles</Text>
+            <Text variant="heading">
+              Trajets disponibles
+              {tripsPreview.length > 0 ? `  (${tripsPreview.length})` : ''}
+            </Text>
             <Pressable onPress={() => router.push('/(tabs)/search')}>
               <Text variant="label" color={colors.primary}>Tout voir</Text>
             </Pressable>
@@ -108,12 +165,54 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: radius.xl,
   },
   headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  greeting: { marginTop: spacing.lg, lineHeight: 34 },
+  hello: { marginTop: spacing.lg },
+  greeting: { marginTop: spacing.xs },
   searchCard: { marginTop: spacing.xl, marginBottom: -spacing.xxxl, gap: spacing.sm },
   field: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm },
   dot: { width: 11, height: 11, borderRadius: 6 },
   divider: { height: 1, backgroundColor: colors.border, marginLeft: spacing.xl },
-  section: { padding: spacing.lg, paddingTop: spacing.xxl + spacing.lg, gap: spacing.md },
+
+  // Destinations populaires
+  popularBlock: { marginTop: spacing.xxl + spacing.lg, gap: spacing.sm },
+  popularTitle: { paddingHorizontal: spacing.lg, textTransform: 'uppercase', letterSpacing: 0.5 },
+  chipsRow: { paddingHorizontal: spacing.lg, gap: spacing.sm },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.card,
+  },
+
+  // Bandeau conducteur
+  driverBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.card,
+  },
+  driverIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.md,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  section: { padding: spacing.lg, paddingTop: spacing.xl, gap: spacing.md },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.xs },
   fab: {
     position: 'absolute',
