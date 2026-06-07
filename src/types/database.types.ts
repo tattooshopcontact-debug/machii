@@ -149,6 +149,21 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['messages']['Insert']>;
         Relationships: [];
       };
+      push_tokens: {
+        Row: {
+          user_id: string;
+          expo_token: string;
+          platform: 'ios' | 'android' | 'web';
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          expo_token: string;
+          platform: 'ios' | 'android' | 'web';
+        };
+        Update: Partial<Database['public']['Tables']['push_tokens']['Insert']>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { QueryClientProvider } from '@tanstack/react-query';
 
+import { registerForPushNotifications } from '@/lib/notifications';
 import { queryClient } from '@/lib/queryClient';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, interFontMap } from '@/theme';
@@ -18,10 +19,18 @@ export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(interFontMap);
   const loadSession = useAuthStore((s) => s.loadSession);
   const hydrated = useAuthStore((s) => s.hydrated);
+  const userId = useAuthStore((s) => s.user?.id);
 
   useEffect(() => {
     loadSession();
   }, [loadSession]);
+
+  // Enregistre le device pour les push dès qu'un user est loggé.
+  // No-op silencieux si permission refusée ou simulateur.
+  useEffect(() => {
+    if (!userId) return;
+    registerForPushNotifications(userId).catch(() => {});
+  }, [userId]);
 
   useEffect(() => {
     if ((fontsLoaded || fontError) && hydrated) {
