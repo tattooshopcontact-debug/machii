@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useQueryClient } from '@tanstack/react-query';
+
 import { CityPicker } from '@/components/CityPicker';
 import { Button, Card, LegalBanner, Screen, Text } from '@/components/ui';
 import { describeError } from '@/lib/errors';
@@ -18,6 +20,7 @@ export default function CreateTripScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
+  const queryClient = useQueryClient();
 
   const [origin, setOrigin] = useState<string | null>(null);
   const [destination, setDestination] = useState<string | null>(null);
@@ -70,6 +73,10 @@ export default function CreateTripScreen() {
         is_recurring: recurring,
       });
       if (error) throw error;
+
+      // Invalide tous les caches trips pour que l'écran "Mes trajets"
+      // et la liste "Recherche" voient le nouveau trajet immédiatement.
+      await queryClient.invalidateQueries({ queryKey: ['trips'] });
 
       Alert.alert('Trajet publié', `${origin} → ${destination} a été publié.`, [
         { text: 'OK', onPress: () => router.back() },

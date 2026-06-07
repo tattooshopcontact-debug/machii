@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useQueryClient } from '@tanstack/react-query';
+
 import { Button, Text } from '@/components/ui';
 import { describeError } from '@/lib/errors';
 import { useAuthStore } from '@/stores/authStore';
@@ -13,6 +15,7 @@ export default function OtpScreen() {
   const insets = useSafeAreaInsets();
   const pendingPhone = useAuthStore((s) => s.pendingPhone);
   const signInAnonymous = useAuthStore((s) => s.signInAnonymous);
+  const queryClient = useQueryClient();
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -28,6 +31,10 @@ export default function OtpScreen() {
       // V0 : le code OTP est mocké côté client (n'importe quel 4 chiffres).
       // Auth Supabase anonyme → JWT + ligne profiles créée par trigger.
       await signInAnonymous(pendingPhone, name);
+      // Le user vient de changer (nouveau compte ou re-connexion) :
+      // invalide tous les caches keyed sur l'ancien userId pour éviter
+      // de voir des trajets/bookings d'une session précédente.
+      queryClient.clear();
       router.replace('/(tabs)');
     } catch (e: unknown) {
       Alert.alert('Connexion impossible', describeError(e));
