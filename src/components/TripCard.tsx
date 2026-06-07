@@ -28,7 +28,13 @@ export function TripCard({ trip, onPress, asMatch = false }: TripCardProps) {
       )}
 
       <View style={styles.topRow}>
-        <Avatar name={trip.driver.fullName} tint={trip.driver.avatarTint} size={44} verified={trip.driver.isVerified} />
+        <Avatar
+          name={trip.driver.fullName}
+          uri={trip.driver.avatarUrl ?? undefined}
+          tint={trip.driver.avatarTint}
+          size={44}
+          verified={trip.driver.isVerified}
+        />
         <View style={styles.driverInfo}>
           <Text variant="subtitle" numberOfLines={1}>
             {trip.driver.fullName}

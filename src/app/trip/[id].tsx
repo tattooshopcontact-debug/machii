@@ -76,7 +76,13 @@ export default function TripDetailScreen() {
         <>
           <Screen contentStyle={{ gap: spacing.md, paddingTop: spacing.lg }}>
             <Card style={styles.driver}>
-              <Avatar name={trip.driver.fullName} tint={trip.driver.avatarTint} size={56} verified={trip.driver.isVerified} />
+              <Avatar
+                name={trip.driver.fullName}
+                uri={trip.driver.avatarUrl ?? undefined}
+                tint={trip.driver.avatarTint}
+                size={56}
+                verified={trip.driver.isVerified}
+              />
               <View style={{ flex: 1 }}>
                 <Text variant="subtitle">{trip.driver.fullName}</Text>
                 <View style={styles.metaRow}>

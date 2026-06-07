@@ -42,7 +42,13 @@ export default function ProfileScreen() {
       <Screen tabBarSpacing contentStyle={{ gap: spacing.md, paddingTop: spacing.lg }}>
         {/* Carte identité */}
         <Card style={styles.identity}>
-          <Avatar name={user.fullName} tint={user.avatarTint} size={76} verified={user.isVerified} />
+          <Avatar
+            name={user.fullName}
+            uri={user.avatarUrl ?? undefined}
+            tint={user.avatarTint}
+            size={76}
+            verified={user.isVerified}
+          />
           <Text variant="title" style={{ marginTop: spacing.sm }}>
             {user.fullName}
           </Text>

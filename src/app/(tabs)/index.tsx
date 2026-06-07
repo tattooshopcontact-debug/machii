@@ -27,7 +27,12 @@ export default function HomeScreen() {
         <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
           <View style={styles.headerTop}>
             <Logo size={24} inverted />
-            <Avatar name={user?.fullName ?? 'F'} tint={user?.avatarTint ?? 'yellow'} size={40} />
+            <Avatar
+              name={user?.fullName ?? 'F'}
+              uri={user?.avatarUrl ?? undefined}
+              tint={user?.avatarTint ?? 'yellow'}
+              size={40}
+            />
           </View>
           <Text variant="title" color={colors.textOnPrimary} style={styles.greeting}>
             Salut {user?.fullName ?? ''} 👋{'\n'}Où veux-tu aller ?
