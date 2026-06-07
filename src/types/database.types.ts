@@ -164,6 +164,31 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['push_tokens']['Insert']>;
         Relationships: [];
       };
+      ratings: {
+        Row: {
+          id: string;
+          trip_id: string;
+          rater_id: string;
+          ratee_id: string;
+          punctuality: number | null;
+          cleanliness: number | null;
+          driving: number | null;
+          friendliness: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          trip_id: string;
+          rater_id: string;
+          ratee_id: string;
+          punctuality?: number | null;
+          cleanliness?: number | null;
+          driving?: number | null;
+          friendliness?: number | null;
+        };
+        Update: Partial<Database['public']['Tables']['ratings']['Insert']>;
+        Relationships: [];
+      };
       kyc_documents: {
         Row: {
           id: string;

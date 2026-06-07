@@ -63,6 +63,7 @@ export default function RootLayout() {
             <Stack.Screen name="profile/edit" options={{ presentation: 'modal' }} />
             <Stack.Screen name="messages/[id]" />
             <Stack.Screen name="profile/verify" />
+            <Stack.Screen name="trip/rate/[id]" options={{ presentation: 'modal' }} />
           </Stack>
         </QueryClientProvider>
       </SafeAreaProvider>
