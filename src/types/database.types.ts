@@ -164,6 +164,42 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['push_tokens']['Insert']>;
         Relationships: [];
       };
+      emergency_contacts: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          phone: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          phone: string;
+        };
+        Update: Partial<Database['public']['Tables']['emergency_contacts']['Insert']>;
+        Relationships: [];
+      };
+      sos_events: {
+        Row: {
+          id: string;
+          profile_id: string;
+          trip_id: string | null;
+          location: unknown | null;
+          resolved: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          profile_id: string;
+          trip_id?: string | null;
+          location?: string | null;
+          resolved?: boolean;
+        };
+        Update: Partial<Database['public']['Tables']['sos_events']['Insert']>;
+        Relationships: [];
+      };
       ratings: {
         Row: {
           id: string;

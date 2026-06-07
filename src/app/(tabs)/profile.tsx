@@ -94,6 +94,13 @@ export default function ProfileScreen() {
         )}
 
         <Button
+          label="SOS et contacts d'urgence"
+          variant="secondary"
+          left={<Ionicons name="alert-circle-outline" size={18} color={colors.textOnPrimary} />}
+          onPress={() => router.push('/profile/sos')}
+        />
+
+        <Button
           label="Se déconnecter"
           variant="outline"
           onPress={onSignOut}
