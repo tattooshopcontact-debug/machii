@@ -111,6 +111,44 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['bookings']['Insert']>;
         Relationships: [];
       };
+      conversations: {
+        Row: {
+          id: string;
+          trip_id: string;
+          driver_id: string;
+          passenger_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          trip_id: string;
+          driver_id: string;
+          passenger_id: string;
+        };
+        Update: Partial<Database['public']['Tables']['conversations']['Insert']>;
+        Relationships: [];
+      };
+      messages: {
+        Row: {
+          id: string;
+          conversation_id: string;
+          sender_id: string;
+          content: string;
+          blocked: boolean;
+          read_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          conversation_id: string;
+          sender_id: string;
+          content: string;
+          blocked?: boolean;
+          read_at?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['messages']['Insert']>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
