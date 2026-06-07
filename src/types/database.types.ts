@@ -164,6 +164,27 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['push_tokens']['Insert']>;
         Relationships: [];
       };
+      kyc_documents: {
+        Row: {
+          id: string;
+          profile_id: string;
+          doc_type: 'cin' | 'permis' | 'carte_grise' | 'photo_vehicule';
+          file_path: string;
+          status: 'pending' | 'approved' | 'rejected';
+          reviewed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          profile_id: string;
+          doc_type: 'cin' | 'permis' | 'carte_grise' | 'photo_vehicule';
+          file_path: string;
+          status?: 'pending' | 'approved' | 'rejected';
+          reviewed_at?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['kyc_documents']['Insert']>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

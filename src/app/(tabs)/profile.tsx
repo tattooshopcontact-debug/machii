@@ -84,6 +84,15 @@ export default function ProfileScreen() {
           onPress={() => router.push('/profile/edit')}
         />
 
+        {!user.isVerified && (
+          <Button
+            label="Se faire vérifier"
+            variant="secondary"
+            left={<Ionicons name="shield-checkmark-outline" size={18} color={colors.textOnPrimary} />}
+            onPress={() => router.push('/profile/verify')}
+          />
+        )}
+
         <Button
           label="Se déconnecter"
           variant="outline"
