@@ -75,7 +75,7 @@ export default function TripsScreen() {
             bookings={incoming.data ?? []}
             bookingsLoading={incoming.isLoading}
             bookingsError={incoming.error}
-            onPressTrip={(id) => router.push(`/trip/${id}`)}
+            onPressTrip={(id) => router.push(`/trip/edit/${id}`)}
           />
         ) : (
           <PassengerPanel

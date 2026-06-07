@@ -50,6 +50,7 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="trip/[id]" />
             <Stack.Screen name="trip/create" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="trip/edit/[id]" options={{ presentation: 'modal' }} />
           </Stack>
         </QueryClientProvider>
       </SafeAreaProvider>

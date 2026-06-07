@@ -1,8 +1,9 @@
 /**
  * Helpers de mapping et de requêtes Supabase pour les trajets.
  */
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { cityToPoint, parseDepartureTime } from '@/lib/geo';
 import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database.types';
 import type { DriverSummary, Trip } from '@/types/models';
@@ -129,5 +130,82 @@ export function useMyPublishedTrips(driverId: string | undefined) {
     queryFn: () => fetchMyPublishedTrips(driverId!),
     enabled: !!driverId,
     staleTime: 15_000,
+  });
+}
+
+/**
+ * Patch d'un trajet existant. Seul le conducteur du trip est autorisé via RLS.
+ * Si origin/destination change → on recalcule les points PostGIS.
+ * Si heure change → on parse et recalcule departure_time.
+ */
+export type TripPatch = Partial<{
+  origin: string;
+  destination: string;
+  time: string;
+  seats: number;
+  price: number | null;
+  status: Database['public']['Enums']['trip_status'];
+}>;
+
+async function patchTrip(id: string, patch: TripPatch) {
+  const dbPatch: Database['public']['Tables']['trips']['Update'] = {};
+
+  if (patch.origin !== undefined) {
+    dbPatch.origin_label = patch.origin;
+    const point = cityToPoint(patch.origin);
+    if (!point) throw new Error(`Ville inconnue : ${patch.origin}`);
+    dbPatch.origin = point;
+  }
+  if (patch.destination !== undefined) {
+    dbPatch.destination_label = patch.destination;
+    const point = cityToPoint(patch.destination);
+    if (!point) throw new Error(`Ville inconnue : ${patch.destination}`);
+    dbPatch.destination = point;
+  }
+  if (patch.time !== undefined) {
+    dbPatch.departure_time = parseDepartureTime(patch.time);
+  }
+  if (patch.seats !== undefined) {
+    dbPatch.seats_total = patch.seats;
+    dbPatch.seats_available = patch.seats;
+  }
+  if (patch.price !== undefined) dbPatch.price_per_seat = patch.price;
+  if (patch.status !== undefined) dbPatch.status = patch.status;
+
+  const { data, error } = await supabase
+    .from('trips')
+    .update(dbPatch)
+    .eq('id', id)
+    .select('*, driver:profiles!trips_driver_id_fkey(*)')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export function useUpdateTrip() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: TripPatch }) => patchTrip(id, patch),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['trips'] });
+    },
+  });
+}
+
+async function deleteTrip(id: string) {
+  // Supprime physiquement le trip. CASCADE sur bookings/waypoints/conversations
+  // via la migration 0001, donc les demandes liées sont supprimées aussi.
+  const { error } = await supabase.from('trips').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export function useDeleteTrip() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteTrip(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['trips'] });
+      qc.invalidateQueries({ queryKey: ['bookings'] });
+    },
   });
 }
