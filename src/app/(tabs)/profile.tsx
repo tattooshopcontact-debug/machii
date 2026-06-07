@@ -2,22 +2,39 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
-import { IconStar } from '@/components/icons';
-import { Avatar, Badge, Button, Card, RatingBar, Screen, ScreenHeader, Text } from '@/components/ui';
-import { DEMO_PROFILE } from '@/constants/mock';
+import { Avatar, Badge, Button, Card, Screen, ScreenHeader, Text } from '@/components/ui';
 import { useAuthStore } from '@/stores/authStore';
-import { colors, fonts, fontSize, radius, spacing } from '@/theme';
+import { colors, radius, spacing } from '@/theme';
+import type { Role } from '@/types/models';
+
+const ROLE_LABEL: Record<Role, string> = {
+  passenger: 'Passager',
+  driver: 'Conducteur',
+  both: 'Passager et conducteur',
+};
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut } = useAuthStore();
-  const p = user ?? DEMO_PROFILE;
-  const progress = Math.min(1, p.xp / p.xpForNextLevel);
 
-  function onSignOut() {
-    signOut();
+  if (!user) {
+    return (
+      <View style={styles.root}>
+        <ScreenHeader title="Profil" />
+        <Screen tabBarSpacing contentStyle={{ paddingTop: spacing.xl, alignItems: 'center' }}>
+          <Text variant="body" color={colors.textSecondary}>Tu n'es pas connecté.</Text>
+          <Button label="Se connecter" onPress={() => router.replace('/(auth)/phone')} style={{ marginTop: spacing.lg }} />
+        </Screen>
+      </View>
+    );
+  }
+
+  async function onSignOut() {
+    await signOut();
     router.replace('/(auth)/phone');
   }
+
+  const ratingDisplay = user.ratingAvg > 0 ? user.ratingAvg.toFixed(1) : '—';
 
   return (
     <View style={styles.root}>
@@ -25,63 +42,50 @@ export default function ProfileScreen() {
       <Screen tabBarSpacing contentStyle={{ gap: spacing.md, paddingTop: spacing.lg }}>
         {/* Carte identité */}
         <Card style={styles.identity}>
-          <Avatar name={p.fullName} tint={p.avatarTint} size={76} verified={p.isVerified} />
+          <Avatar name={user.fullName} tint={user.avatarTint} size={76} verified={user.isVerified} />
           <Text variant="title" style={{ marginTop: spacing.sm }}>
-            {p.fullName}
+            {user.fullName}
           </Text>
-          <View style={styles.levelRow}>
-            <Badge label={`Niveau ${p.level}`} tone="recurring" />
-            <Text variant="caption">{p.xp} XP</Text>
+          <View style={styles.metaRow}>
+            <Badge label={ROLE_LABEL[user.role]} tone="recurring" />
+            {!user.isVerified && <Text variant="caption" color={colors.textSecondary}>Non vérifié</Text>}
           </View>
-          <View style={styles.xpTrack}>
-            <View style={[styles.xpFill, { width: `${progress * 100}%` }]} />
-          </View>
-          <Text variant="caption">
-            {p.xpForNextLevel - p.xp} XP avant le niveau {p.level + 1}
+          <Text variant="caption" color={colors.textSecondary} style={{ marginTop: spacing.sm }}>
+            {user.phone}
           </Text>
         </Card>
 
-        {/* Évaluation */}
-        <Card style={{ gap: spacing.md }}>
-          <View style={styles.ratingHeader}>
-            <Text variant="heading">Évaluation</Text>
-            <View style={styles.ratingScore}>
-              <IconStar size={20} />
-              <Text variant="subtitle">{p.ratingAvg.toFixed(1)}</Text>
-            </View>
+        {/* Stats neutres (vraies données) */}
+        <Card style={styles.statsRow}>
+          <View style={styles.stat}>
+            <Ionicons name="star" size={20} color={colors.accent} />
+            <Text variant="subtitle">{ratingDisplay}</Text>
+            <Text variant="caption" color={colors.textSecondary}>Note</Text>
           </View>
-          {p.criteria.map((c) => (
-            <RatingBar key={c.key} label={c.label} value={c.value} />
-          ))}
-        </Card>
-
-        {/* Achievements */}
-        <Card style={{ gap: spacing.md }}>
-          <Text variant="heading">Achievements</Text>
-          <View style={styles.achGrid}>
-            {p.achievements.map((a) => (
-              <View key={a.key} style={[styles.ach, !a.unlocked && styles.achLocked]}>
-                <Text style={{ fontSize: 24 }}>{a.unlocked ? a.emoji : '🔒'}</Text>
-                <Text variant="caption" center numberOfLines={2}>
-                  {a.label}
-                </Text>
-              </View>
-            ))}
+          <View style={styles.statDivider} />
+          <View style={styles.stat}>
+            <Ionicons name="trophy-outline" size={20} color={colors.primary} />
+            <Text variant="subtitle">Niveau {user.level}</Text>
+            <Text variant="caption" color={colors.textSecondary}>{user.xp} XP</Text>
           </View>
         </Card>
 
-        {/* Préférences / tags */}
-        <Card style={{ gap: spacing.md }}>
-          <Text variant="heading">À propos</Text>
-          <View style={styles.tags}>
-            {p.tags.map((t) => (
-              <Badge key={t} label={t} tone="neutral" />
-            ))}
-          </View>
-        </Card>
+        {/* CTA modifier */}
+        <Button
+          label="Modifier mon profil"
+          variant="secondary"
+          left={<Ionicons name="create-outline" size={18} color={colors.textOnPrimary} />}
+          onPress={() => router.push('/profile/edit')}
+        />
 
-        <Button label="Se déconnecter" variant="outline" onPress={onSignOut} style={{ marginTop: spacing.sm }} />
-        <Text variant="caption" center>
+        <Button
+          label="Se déconnecter"
+          variant="outline"
+          onPress={onSignOut}
+          style={{ marginTop: spacing.xs }}
+        />
+
+        <Text variant="caption" center color={colors.textMuted} style={{ marginTop: spacing.md }}>
           Machii · covoiturage gratuit (loi n° 2004-33)
         </Text>
       </Screen>
@@ -92,22 +96,8 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   identity: { alignItems: 'center', gap: spacing.xs },
-  levelRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs },
-  xpTrack: { width: '100%', height: 8, borderRadius: 4, backgroundColor: colors.border, overflow: 'hidden', marginTop: spacing.sm },
-  xpFill: { height: 8, borderRadius: 4, backgroundColor: colors.accent },
-  ratingHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  ratingScore: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  achGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  ach: {
-    width: '22%',
-    aspectRatio: 0.85,
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    padding: spacing.xs,
-  },
-  achLocked: { opacity: 0.45 },
-  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs },
+  statsRow: { flexDirection: 'row', alignItems: 'center' },
+  stat: { flex: 1, alignItems: 'center', gap: 2, paddingVertical: spacing.sm },
+  statDivider: { width: 1, height: 48, backgroundColor: colors.border },
 });
