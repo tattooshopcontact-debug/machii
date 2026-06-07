@@ -14,7 +14,7 @@ export default function OtpScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const pendingPhone = useAuthStore((s) => s.pendingPhone);
-  const signInAnonymous = useAuthStore((s) => s.signInAnonymous);
+  const signInWithPhone = useAuthStore((s) => s.signInWithPhone);
   const queryClient = useQueryClient();
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
@@ -29,8 +29,8 @@ export default function OtpScreen() {
     setLoading(true);
     try {
       // V0 : le code OTP est mocké côté client (n'importe quel 4 chiffres).
-      // Auth Supabase anonyme → JWT + ligne profiles créée par trigger.
-      await signInAnonymous(pendingPhone, name);
+      // signInWithPhone retrouve le user existant si déjà inscrit, sinon le crée.
+      await signInWithPhone(pendingPhone, name);
       // Le user vient de changer (nouveau compte ou re-connexion) :
       // invalide tous les caches keyed sur l'ancien userId pour éviter
       // de voir des trajets/bookings d'une session précédente.
