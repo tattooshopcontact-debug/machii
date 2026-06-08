@@ -3,6 +3,8 @@ import { Tabs } from 'expo-router';
 import type { ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { resolveEffectiveMode, useAppModeStore } from '@/stores/appModeStore';
+import { useAuthStore } from '@/stores/authStore';
 import { colors, fonts, fontSize } from '@/theme';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -16,6 +18,10 @@ function tabIcon(focused: IoniconName, unfocused: IoniconName) {
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const bottomInset = Math.max(insets.bottom, 8);
+  const role = useAuthStore((s) => s.user?.role);
+  const mode = useAppModeStore((s) => s.mode);
+  const effectiveMode = resolveEffectiveMode(role, mode);
+  const isDriver = effectiveMode === 'driver';
 
   return (
     <Tabs
@@ -39,11 +45,19 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="search"
-        options={{ title: 'Recherche', tabBarIcon: tabIcon('search', 'search-outline') }}
+        options={{
+          title: 'Recherche',
+          tabBarIcon: tabIcon('search', 'search-outline'),
+          // Un conducteur ne cherche pas, il publie depuis l'accueil.
+          href: isDriver ? null : '/(tabs)/search',
+        }}
       />
       <Tabs.Screen
         name="trips"
-        options={{ title: 'Mes trajets', tabBarIcon: tabIcon('car', 'car-outline') }}
+        options={{
+          title: isDriver ? 'Mes trajets' : 'Mes courses',
+          tabBarIcon: tabIcon(isDriver ? 'car' : 'ticket', isDriver ? 'car-outline' : 'ticket-outline'),
+        }}
       />
       <Tabs.Screen
         name="messages"
