@@ -1,9 +1,11 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Logo, Text } from '@/components/ui';
+import { describeError } from '@/lib/errors';
+import { sendOtp } from '@/lib/otp';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, fonts, fontSize, radius, spacing } from '@/theme';
 
@@ -12,16 +14,36 @@ export default function PhoneScreen() {
   const insets = useSafeAreaInsets();
   const setPendingPhone = useAuthStore((s) => s.setPendingPhone);
   const [local, setLocal] = useState('');
+  const [sending, setSending] = useState(false);
 
   const digits = local.replace(/\D/g, '');
   const valid = digits.length === 8; // numéro tunisien
 
-  function onSubmit() {
+  async function onSubmit() {
     if (!valid) return;
     const phone = `+216${digits}`;
-    setPendingPhone(phone);
-    // Vrai flux : await supabase.auth.signInWithOtp({ phone })
-    router.push('/(auth)/otp');
+    setSending(true);
+    try {
+      // Envoie le code via WhatsApp Cloud API (si configuré).
+      // Sinon, le code est juste enregistré en DB (visible dans phone_otp).
+      const r = await sendOtp(phone);
+      setPendingPhone(phone);
+      router.push('/(auth)/otp');
+      if (!r.sent) {
+        // Pas de WhatsApp configure : on previent doucement le user.
+        setTimeout(() =>
+          Alert.alert(
+            'Code généré (mode démo)',
+            'WhatsApp n\'est pas encore branché en V0 — le code est dans la base. Pour tester maintenant, saisis n\'importe quel code à 4 chiffres dans l\'écran suivant.',
+          ),
+          200,
+        );
+      }
+    } catch (e) {
+      Alert.alert('Envoi impossible', describeError(e));
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -39,7 +61,7 @@ export default function PhoneScreen() {
       <View style={[styles.sheet, { paddingBottom: insets.bottom + spacing.xl }]}>
         <Text variant="title">Ton numéro</Text>
         <Text variant="body" color={colors.textSecondary} style={{ marginTop: spacing.xs }}>
-          On t'envoie un code par SMS pour te connecter.
+          On t'envoie un code par WhatsApp pour te connecter.
         </Text>
 
         <View style={styles.inputRow}>
@@ -58,7 +80,13 @@ export default function PhoneScreen() {
           />
         </View>
 
-        <Button label="Recevoir le code" onPress={onSubmit} disabled={!valid} style={{ marginTop: spacing.lg }} />
+        <Button
+          label="Recevoir le code"
+          onPress={onSubmit}
+          disabled={!valid || sending}
+          loading={sending}
+          style={{ marginTop: spacing.lg }}
+        />
 
         <Text variant="caption" center style={{ marginTop: spacing.lg }}>
           En continuant, tu acceptes les CGU de Machii. Covoiturage gratuit — loi n° 2004-33.

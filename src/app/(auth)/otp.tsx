@@ -7,6 +7,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import { Button, Text } from '@/components/ui';
 import { describeError } from '@/lib/errors';
+import { verifyOtp } from '@/lib/otp';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, fonts, fontSize, radius, spacing } from '@/theme';
 
@@ -20,7 +21,10 @@ export default function OtpScreen() {
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const codeOk = code.replace(/\D/g, '').length >= 4;
+  const codeDigits = code.replace(/\D/g, '');
+  // Accepte 4 chiffres pour le mode démo (n'importe quel code) ou 6 chiffres
+  // pour le vrai code WhatsApp.
+  const codeOk = codeDigits.length === 6 || codeDigits.length === 4;
   const nameOk = name.trim().length >= 2;
   const valid = codeOk && nameOk;
 
@@ -28,12 +32,18 @@ export default function OtpScreen() {
     if (!valid || !pendingPhone) return;
     setLoading(true);
     try {
-      // V0 : le code OTP est mocké côté client (n'importe quel 4 chiffres).
-      // signInWithPhone retrouve le user existant si déjà inscrit, sinon le crée.
+      // Si code à 6 chiffres → on tente la vérification réelle via la RPC.
+      // Si elle échoue (mauvais code, expiré), on bloque.
+      // Si code à 4 chiffres → mode démo (V0 sans WhatsApp), on passe direct.
+      if (codeDigits.length === 6) {
+        const ok = await verifyOtp(pendingPhone, codeDigits);
+        if (!ok) {
+          Alert.alert('Code invalide', 'Le code ne correspond pas ou a expiré. Demande un nouveau code.');
+          return;
+        }
+      }
       await signInWithPhone(pendingPhone, name);
-      // Le user vient de changer (nouveau compte ou re-connexion) :
-      // invalide tous les caches keyed sur l'ancien userId pour éviter
-      // de voir des trajets/bookings d'une session précédente.
+      // Le user vient de changer : on vide le cache pour repartir propre.
       queryClient.clear();
       router.replace('/(tabs)');
     } catch (e: unknown) {
