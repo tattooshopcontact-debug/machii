@@ -14,7 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/ui';
-import { useConversationMessages, useSendMessage, type ChatMessage } from '@/lib/chat';
+import { useConversationMessages, useMyConversations, useSendMessage, type ChatMessage } from '@/lib/chat';
 import { describeError } from '@/lib/errors';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, fonts, fontSize, radius, spacing } from '@/theme';
@@ -33,9 +33,16 @@ export default function ConversationScreen() {
   const user = useAuthStore((s) => s.user);
 
   const { data: messages, isLoading, error } = useConversationMessages(id);
+  const { data: conversations } = useMyConversations(user?.id);
   const sendMessage = useSendMessage();
   const [text, setText] = useState('');
   const listRef = useRef<FlatList<ChatMessage>>(null);
+
+  const conversation = conversations?.find((c) => c.id === id);
+  const otherName = conversation?.other?.full_name ?? 'Conversation';
+  const tripLabel = conversation
+    ? `${conversation.tripOrigin} → ${conversation.tripDestination}`
+    : null;
 
   // Auto-scroll en bas quand un nouveau message arrive.
   useEffect(() => {
@@ -67,7 +74,16 @@ export default function ConversationScreen() {
         <Pressable onPress={() => router.back()} hitSlop={10}>
           <Ionicons name="chevron-back" size={26} color={colors.textOnPrimary} />
         </Pressable>
-        <Text variant="subtitle" color={colors.textOnPrimary}>Conversation</Text>
+        <View style={{ flex: 1, alignItems: 'center' }}>
+          <Text variant="subtitle" color={colors.textOnPrimary} numberOfLines={1}>
+            {otherName}
+          </Text>
+          {tripLabel && (
+            <Text variant="caption" color="rgba(255,255,255,0.75)" numberOfLines={1}>
+              {tripLabel}
+            </Text>
+          )}
+        </View>
         <View style={{ width: 26 }} />
       </View>
 

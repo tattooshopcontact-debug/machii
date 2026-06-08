@@ -55,7 +55,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="trips"
         options={{
-          title: isDriver ? 'Mes trajets' : 'Mes courses',
+          title: isDriver ? 'Trajets' : 'Courses',
           tabBarIcon: tabIcon(isDriver ? 'car' : 'ticket', isDriver ? 'car-outline' : 'ticket-outline'),
         }}
       />
