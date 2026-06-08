@@ -54,6 +54,19 @@
           "locationWhenInUsePermission": "Machii utilise ta position pour proposer les trajets proches et sécuriser tes déplacements."
         }
       ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Machii accède à tes photos pour ta photo de profil et tes documents de vérification."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/android-icon-foreground.png",
+          "color": "#1B3D6E"
+        }
+      ],
       "expo-secure-store",
       "expo-image"
     ],
