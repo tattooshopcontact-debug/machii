@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500">
+  <!-- Feature graphic Play Store : 1024x500
+       Bandeau horizontal Machii. Logo + accroche + element visuel route/voiture. -->
+
+  <!-- Fond bleu marine -->
+  <rect width="1024" height="500" fill="#1B3D6E"/>
+
+  <!-- Subtile route diagonale en bas pour donner du mouvement -->
+  <path d="M 0 470 Q 256 420 512 460 T 1024 440 L 1024 500 L 0 500 Z" fill="#13315A" opacity="0.7"/>
+  <!-- Pointilles de marquage routier -->
+  <g stroke="#F4C842" stroke-width="3" stroke-dasharray="18 12" opacity="0.45">
+    <path d="M 0 478 Q 256 428 512 468 T 1024 448" fill="none"/>
+  </g>
+
+  <!-- Logo M (icone) a gauche -->
+  <g transform="translate(70 145) scale(0.21)">
+    <!-- Cercle de fond jaune autour du M pour le faire ressortir -->
+    <rect x="-50" y="-50" width="1024" height="1024" rx="180" ry="180" fill="#F4C842" opacity="0.0"/>
+    <g fill="#F4C842">
+      <path d="
+        M 220 240 L 320 240 L 512 540 L 704 240 L 804 240
+        L 804 784 L 712 784 L 712 430 L 552 678 L 472 678
+        L 312 430 L 312 784 L 220 784 Z" />
+      <circle cx="512" cy="180" r="32"/>
+    </g>
+  </g>
+
+  <!-- Wordmark "Machii" + accroche -->
+  <text x="320" y="200" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif"
+        font-size="92" font-weight="800" fill="#FFFFFF">Machii</text>
+
+  <text x="320" y="270" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif"
+        font-size="34" font-weight="600" fill="#F4C842">L'app de covoiturage tunisien</text>
+
+  <text x="320" y="320" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif"
+        font-size="22" font-weight="400" fill="rgba(255,255,255,0.78)">Tunis · Sousse · Sfax · Hammamet · Nabeul · Djerba</text>
+
+  <!-- 3 chips fonctionnalites -->
+  <g font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif"
+     font-size="18" font-weight="600" fill="#1B3D6E">
+    <g transform="translate(320 360)">
+      <rect width="170" height="42" rx="21" fill="#F4C842"/>
+      <text x="85" y="27" text-anchor="middle">🚗 Gratuit</text>
+    </g>
+    <g transform="translate(505 360)">
+      <rect width="170" height="42" rx="21" fill="#F4C842"/>
+      <text x="85" y="27" text-anchor="middle">🛡️ Sécurisé</text>
+    </g>
+    <g transform="translate(690 360)">
+      <rect width="220" height="42" rx="21" fill="#F4C842"/>
+      <text x="110" y="27" text-anchor="middle">🇹🇳 100% Tunisien</text>
+    </g>
+  </g>
+
+  <!-- Voiture stylisee a droite -->
+  <g transform="translate(870 220)">
+    <!-- Corps voiture -->
+    <path d="M -60 0 Q -60 -25 -35 -28 L -10 -45 L 30 -45 L 55 -28 Q 80 -25 80 0 L 80 12 L -60 12 Z"
+          fill="#F4C842"/>
+    <!-- Vitres -->
+    <path d="M -25 -25 L -8 -40 L 28 -40 L 50 -25 Z" fill="#1B3D6E"/>
+    <!-- Roues -->
+    <circle cx="-35" cy="14" r="10" fill="#1B3D6E"/>
+    <circle cx="-35" cy="14" r="5" fill="#F4C842"/>
+    <circle cx="55" cy="14" r="10" fill="#1B3D6E"/>
+    <circle cx="55" cy="14" r="5" fill="#F4C842"/>
+  </g>
+</svg>
