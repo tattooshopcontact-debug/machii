@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Machii — icone d'app
+       Fond bleu marine #1B3D6E
+       "M" jaune #F4C842 dont le pied droit se prolonge en route arrondie
+       qui finit sur un point pin (epingle de carte). -->
+  <rect width="1024" height="1024" fill="#1B3D6E"/>
+
+  <!-- Le "M" — dessine en path pour controle pixel-perfect.
+       Inspire du logo Machii actuel ("Machii" avec un O dans le i).
+       Triangles internes du M nets, base epaisse. -->
+  <g fill="#F4C842">
+    <!-- Lettre M : 2 jambes verticales + V inverse au centre -->
+    <path d="
+      M 220 240
+      L 320 240
+      L 512 540
+      L 704 240
+      L 804 240
+      L 804 784
+      L 712 784
+      L 712 430
+      L 552 678
+      L 472 678
+      L 312 430
+      L 312 784
+      L 220 784
+      Z" />
+  </g>
+
+  <!-- Petit point d'accentuation au-dessus du M (clin d'oeil au logo MachII original) -->
+  <circle cx="512" cy="180" r="32" fill="#F4C842"/>
+</svg>

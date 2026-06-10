@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Monochrome Android 13+ themed icon : silhouette blanche sur fond transparent. -->
+  <g fill="#FFFFFF">
+    <path d="
+      M 220 240 L 320 240 L 512 540 L 704 240 L 804 240
+      L 804 784 L 712 784 L 712 430 L 552 678 L 472 678
+      L 312 430 L 312 784 L 220 784 Z" />
+    <circle cx="512" cy="180" r="32"/>
+  </g>
+</svg>

@@ -259,6 +259,14 @@ export type Database = {
         };
         Returns: Database['public']['Tables']['trips']['Row'][];
       };
+      send_whatsapp_otp: {
+        Args: { p_phone: string };
+        Returns: { sent: boolean; reason?: string };
+      };
+      verify_whatsapp_otp: {
+        Args: { p_phone: string; p_code: string };
+        Returns: boolean;
+      };
     };
     Enums: {
       role_type: Role;
