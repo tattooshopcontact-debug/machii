@@ -42,3 +42,8 @@ example
 # generated native folders
 /ios
 /android
+
+# Play Store binary artifacts
+docs/play-store/*.aab
+docs/play-store/machii_play_store_assets.zip
+docs/play-store/package/04_machii.aab
