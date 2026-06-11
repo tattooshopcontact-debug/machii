@@ -95,3 +95,44 @@
 - **L'app n'arbitre pas les prix** (négociation libre) et **ne touche pas l'argent** en Phase 1.
 - Coûts récurrents budgétés : Supabase free→25 €, cartographie 0–300 €, SMS ~0,05 €/alerte.
 - Phase 2 envisagée : WaCoin ($WCH), self-hosting Supabase si souveraineté données exigée.
+
+---
+
+## ANNEXE — Specs détaillées de la sous-page Notion "Mockups & audit technique" (vérification approfondie 2026-06-12)
+
+> Source : page Notion `35ad1de7e04b811087bfd04e3e6a80ce` (11 mockups validés par Faouez le 2026-05-05). Détails qui PRÉCISENT les décisions — à respecter à l'implémentation.
+
+### Écarts détectés entre les mockups validés et l'app actuelle
+
+| Mockup | Spec validée | État app | Écart à combler |
+|---|---|---|---|
+| 3.3 Annonce APRÈS confirmation | Code 4 chiffres en GRAND format jaune + plaque révélée + photo véhicule + boutons "Partager trajet"/"SOS" + "Annuler la réservation" outline rouge | Téléphone révélé seulement | Écran post-acceptation complet à faire (avec #12-B) |
+| 3.4 Chat anti-bypass | Message bloqué = flouté + cadre rouge + **compteur "Avertissement 1/3 — 3e tentative = suspension 24h"** | Blocage simple sans avertissements ni suspension | Système warnings + suspension 24h |
+| 3.6 Création répétitive | Toggle Ponctuel/Répétitif + **7 chips L M M J V S D** + heure + durée 6 mois + bandeau récap explicite + **Bagages (3 options) + toggle Animaux + "Mot pour les passagers"** | Toggle seul, pas de jours ni options | Formulaire complet décision #18 |
+| 3.9 SOS activé | Header ROUGE #C92A2A + statuts de livraison par contact (✓ Lu / Envoyé) + carte GPS live + **désactivation par appui long 5 s** + bouton "Appeler le 197" | SOS basique | Écran d'état SOS riche |
+| 3.10 KYC | États OCR par document + bandeau sécurité + **"pas de publication de trajet sans vérification complète"** + concept "Vérifié+ payant plus tard" | Upload simple, AUCUN blocage de publication | Gating publication si non vérifié (décision produit à confirmer) |
+| 3.12 Résultats recherche | Chips filtres (heure, prix max, places, **Vérifié**) + card "⚡ MATCH INTELLIGENT" waypoint "+15 min" en vert + badge "À négocier" + état "Complet" grisé | Liste simple | Filtres + waypoint matching (#10) + états |
+| 3.7 Mes thèmes | Barre XP + 5 cards thèmes avec mini-palettes + grille achievements 4×2 + tips contextuels | Avatars seulement | Écran progression (#17) |
+
+### Spécifications transverses validées (baseline visuelle "Home v5")
+
+- **Palette officielle** : navy #1B3D6E · jaune **#FFD400** · orange #F18A4D · crème #FAF7F2 · gris #888 · rouge SOS #C92A2A · vert succès #4ADE80. ✅ L'app respecte (#FFD400 dans theme/colors.ts). ⚠️ Les assets branding (icône, feature graphic) ont été générés en #F4C842 — à harmoniser un jour (mineur).
+- **Logo officiel acté** : wordmark "Machii" navy, 2 cercles jaunes au-dessus des 2 "i" reliés par un **arc courbe** (variation "Curved Arc" #2). Monogramme M = OK pour l'app icon (validé comme tel dans le cadrage).
+- **Style** : header bleu animé (particules + lignes GPS), boutons jaunes "plaque 3D" avec halo, avatars sphères glossy, cards en relief — l'app actuelle suit cette baseline.
+- **Master prompt Machii** : sauvegardé dans la conversation Claude du 2026-05-05 + à dupliquer dans `D:\machii\master_prompt_machii.md`.
+
+### Écrans listés au cadrage encore inexistants dans l'app
+
+- Onboarding 1ère ouverture (3-4 écrans tutoriel)
+- Écran "Trajet en cours" (live tracking pendant la route — au-delà du marqueur sur la carte)
+- Liste de notifications in-app
+- Écran paramètres / préférences
+- Notification festive de déblocage de thème/avatar
+- Écran "activation du partage temps réel" opt-in PASSAGER (cœur du #11-B)
+- Écran confirmation d'arrivée symétrique (#11-C)
+
+### Tâches business du cadrage toujours ouvertes
+
+- [ ] Réserver domaines machii.com / machii.tn / machii.app
+- [ ] Marques INNORPI Tunisie + EUIPO classes 9, 39, 42
+- [ ] Vectorisation pro du logo (Figma/Illustrator) — le rendu actuel est une référence, pas un vectoriel finalisé
