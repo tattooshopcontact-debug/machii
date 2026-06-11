@@ -9,7 +9,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { CityPicker } from '@/components/CityPicker';
 import { Button, Card, LegalBanner, Screen, Text } from '@/components/ui';
 import { describeError } from '@/lib/errors';
-import { cityToPoint, parseDepartureTime } from '@/lib/geo';
+import { cityToPoint, findCity, parseDepartureTime } from '@/lib/geo';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, fonts, fontSize, radius, spacing } from '@/theme';
@@ -71,6 +71,8 @@ export default function CreateTripScreen() {
         price_per_seat: parsedPrice,
         status: 'open',
         is_recurring: recurring,
+        // Cap Maroc M2 : le trajet hérite du pays de la ville de départ.
+        country: findCity(origin)?.country ?? user.country,
       });
       if (error) throw error;
 

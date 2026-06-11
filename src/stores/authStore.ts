@@ -8,25 +8,17 @@ import type { UserProfile } from '@/types/models';
 type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
 
 /**
- * Construit le couple (email, password) déterministe pour un numéro de téléphone.
- *
- * V0 : pas de Twilio, on simule une auth "par téléphone" en utilisant un
- * email synthétique qui n'existe pas vraiment. Comme c'est déterministe à
- * partir du numéro, la même personne avec le même numéro retombe sur le même
- * compte Supabase à chaque connexion → la persistance fonctionne réellement.
- *
- * Quand Twilio sera branché, on remplacera tout ce mécanisme par
- * `supabase.auth.signInWithOtp({ phone })` qui gère ça nativement.
+ * Identifiants d'auth issus de la RPC `otp_login` (cf src/lib/otp.ts).
+ * Le mot de passe N'EST PLUS dérivable côté client : il est calculé côté
+ * serveur (HMAC(pepper, numéro)) et renvoyé uniquement après validation OTP.
+ * Le client s'en sert pour ouvrir/créer la session Supabase.
  */
-function credentialsFromPhone(phone: string): { email: string; password: string } {
-  const digits = phone.replace(/\D/g, '');
-  // Email purement synthétique, jamais envoyé vraiment : pas de risque de leak.
-  const email = `${digits}@machii.local`;
-  // Password déterministe stable. Côté Supabase il est stocké hashé (bcrypt).
-  // Cette stratégie est V0 — quand Twilio sera là, on remplacera.
-  const password = `machii-v0-${digits}`;
-  return { email, password };
-}
+export type VerifiedOtp = {
+  phone: string;
+  fullName?: string;
+  email: string;
+  password: string;
+};
 
 type AuthState = {
   /** null = non connecté. */
@@ -39,20 +31,15 @@ type AuthState = {
   setPendingPhone: (phone: string | null) => void;
 
   /**
-   * Connexion "par téléphone" V0 — sans Twilio.
-   * Mécanisme :
-   * 1) On tente d'abord un signInWithPassword(email_synthétique, password_dérivé)
-   *    → si ça marche, l'user existait déjà, on retrouve son compte (et donc
-   *      ses trajets, ses bookings, son historique).
-   * 2) Sinon (Invalid login credentials) → c'est un nouveau user → signUp
-   *    avec le même couple + données initiales (phone, full_name).
-   *    Puis on re-signIn pour ouvrir la session.
-   * 3) On synchronise le profil (full_name à jour si l'user l'a changé).
+   * Ouvre la session à partir d'un OTP déjà validé par le serveur.
+   * 1) signInWithPassword(email, password) → si l'user existait, on le retrouve.
+   * 2) sinon signUp (le trigger serveur `enforce_otp_on_signup` autorise la
+   *    création uniquement parce qu'un OTP vient d'être consommé) puis re-signIn.
+   * 3) synchronise le profil (full_name, phone, country).
    *
-   * Pré-requis : Confirm email DOIT être désactivé côté Supabase Auth,
-   * sinon le signUp crée un user "non confirmé" qui ne peut pas se logger.
+   * Pré-requis Supabase : "Confirm email" désactivé.
    */
-  signInWithPhone: (phone: string, fullName?: string) => Promise<void>;
+  signInWithVerifiedOtp: (creds: VerifiedOtp) => Promise<void>;
 
   /** Re-lit la session depuis le storage au démarrage. */
   loadSession: () => Promise<void>;
@@ -77,15 +64,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   setPendingPhone: (pendingPhone) => set({ pendingPhone }),
 
-  signInWithPhone: async (phone, fullName) => {
-    const { email, password } = credentialsFromPhone(phone);
+  signInWithVerifiedOtp: async ({ phone, fullName, email, password }) => {
     const cleanName = fullName?.trim();
 
     // Étape 1 : tenter de se reconnecter avec un compte existant.
     let { data: signInData, error: signInError } =
       await supabase.auth.signInWithPassword({ email, password });
 
-    // Étape 2 : pas trouvé → créer le compte, puis re-signIn.
+    // Étape 2 : pas trouvé → créer le compte (autorisé par le trigger OTP), puis re-signIn.
     if (signInError) {
       const { error: signUpError } = await supabase.auth.signUp({
         email,
@@ -105,9 +91,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!userId) throw new Error('Connexion : aucun user retourné');
 
     // Étape 3 : synchroniser le profil. Le trigger handle_new_user a créé la
-    // ligne profiles à l'inscription, on met juste à jour les champs visibles
-    // (notamment full_name si l'utilisateur l'a changé entre 2 sessions).
-    const patch: { phone: string; full_name?: string } = { phone };
+    // ligne profiles à l'inscription, on met juste à jour les champs visibles.
+    // Cap Maroc : le pays est déduit du préfixe téléphonique (+216/+212).
+    const patch: { phone: string; full_name?: string; country: 'TN' | 'MA' } = {
+      phone,
+      country: phone.startsWith('+212') ? 'MA' : 'TN',
+    };
     if (cleanName) patch.full_name = cleanName;
 
     const { data: profileRow, error: profileError } = await supabase
@@ -118,7 +107,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       .single();
 
     if (profileError) throw profileError;
-    set({ user: mapProfileFromDb(profileRow), pendingPhone: null });
+    // On connaît le numéro (saisi par l'utilisateur) : on le réinjecte, car la
+    // colonne `phone` n'est plus renvoyée par les select publics.
+    set({ user: { ...mapProfileFromDb(profileRow), phone }, pendingPhone: null });
   },
 
   loadSession: async () => {
@@ -138,7 +129,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ hydrated: true });
         return;
       }
-      set({ user: mapProfileFromDb(profileRow), hydrated: true });
+      // Récupère SON propre numéro via la RPC dédiée (la colonne `phone` n'est
+      // plus exposée dans les select publics).
+      const { data: myPhone } = await supabase.rpc('get_my_phone');
+      set({
+        user: { ...mapProfileFromDb(profileRow), phone: (myPhone as string | null) ?? '' },
+        hydrated: true,
+      });
     } catch {
       set({ hydrated: true });
     }
@@ -161,7 +158,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       .select()
       .single();
     if (error) throw error;
-    set({ user: mapProfileFromDb(profileRow) });
+    // Conserve le numéro déjà chargé (non renvoyé par le select).
+    set({ user: { ...mapProfileFromDb(profileRow), phone: current.phone } });
   },
 
   signOut: async () => {

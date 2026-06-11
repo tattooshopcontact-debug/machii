@@ -23,6 +23,7 @@ export type Database = {
           full_name: string;
           avatar_url: string | null;
           avatar_key: string | null;
+          country: 'TN' | 'MA';
           role: Role;
           is_verified: boolean;
           rating_avg: number;
@@ -38,6 +39,7 @@ export type Database = {
           full_name?: string;
           avatar_url?: string | null;
           avatar_key?: string | null;
+          country?: 'TN' | 'MA';
           role?: Role;
           is_verified?: boolean;
           rating_avg?: number;
@@ -66,6 +68,7 @@ export type Database = {
           price_per_seat: number | null;
           status: TripStatus;
           is_recurring: boolean;
+          country: 'TN' | 'MA';
           created_at: string;
         };
         Insert: {
@@ -84,6 +87,7 @@ export type Database = {
           price_per_seat?: number | null;
           status?: TripStatus;
           is_recurring?: boolean;
+          country?: 'TN' | 'MA';
         };
         Update: Partial<Database['public']['Tables']['trips']['Insert']>;
         Relationships: [];
@@ -167,6 +171,7 @@ export type Database = {
           seats_needed: number;
           message: string | null;
           status: 'open' | 'matched' | 'cancelled';
+          country: 'TN' | 'MA';
           created_at: string;
           updated_at: string;
         };
@@ -182,6 +187,7 @@ export type Database = {
           seats_needed?: number;
           message?: string | null;
           status?: 'open' | 'matched' | 'cancelled';
+          country?: 'TN' | 'MA';
         };
         Update: Partial<Database['public']['Tables']['trip_requests']['Insert']>;
         Relationships: [];
@@ -341,6 +347,16 @@ export type Database = {
       verify_whatsapp_otp: {
         Args: { p_phone: string; p_code: string };
         Returns: boolean;
+      };
+      otp_login: {
+        Args: { p_phone: string; p_code: string; p_full_name?: string | null };
+        Returns:
+          | { ok: true; email: string; password: string }
+          | { ok: false; reason: string };
+      };
+      get_my_phone: {
+        Args: Record<string, never>;
+        Returns: string | null;
       };
       delete_my_account: {
         Args: Record<string, never>;

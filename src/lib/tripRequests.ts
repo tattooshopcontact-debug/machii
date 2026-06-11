@@ -6,7 +6,7 @@
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { cityToPoint } from '@/lib/geo';
+import { cityToPoint, findCity } from '@/lib/geo';
 import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database.types';
 
@@ -53,6 +53,8 @@ async function createTripRequest(input: CreateTripRequestInput): Promise<TripReq
       seats_needed: input.seatsNeeded,
       message: input.message ?? null,
       status: 'open',
+      // Cap Maroc M2 : la demande hérite du pays de la ville de départ.
+      country: findCity(input.originCity)?.country ?? 'TN',
     })
     .select()
     .single();

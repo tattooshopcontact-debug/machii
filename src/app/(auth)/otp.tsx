@@ -7,24 +7,29 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import { Button, Text } from '@/components/ui';
 import { describeError } from '@/lib/errors';
-import { verifyOtp } from '@/lib/otp';
+import { otpLogin } from '@/lib/otp';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, fonts, fontSize, radius, spacing } from '@/theme';
+
+const OTP_ERRORS: Record<string, string> = {
+  no_active_code: 'Aucun code en cours. Demande un nouveau code.',
+  bad_code: 'Le code ne correspond pas. Réessaie.',
+  too_many_attempts: 'Trop de tentatives. Demande un nouveau code.',
+  invalid_phone: 'Numéro invalide.',
+};
 
 export default function OtpScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const pendingPhone = useAuthStore((s) => s.pendingPhone);
-  const signInWithPhone = useAuthStore((s) => s.signInWithPhone);
+  const signInWithVerifiedOtp = useAuthStore((s) => s.signInWithVerifiedOtp);
   const queryClient = useQueryClient();
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
 
   const codeDigits = code.replace(/\D/g, '');
-  // Accepte 4 chiffres pour le mode démo (n'importe quel code) ou 6 chiffres
-  // pour le vrai code WhatsApp.
-  const codeOk = codeDigits.length === 6 || codeDigits.length === 4;
+  const codeOk = codeDigits.length >= 4 && codeDigits.length <= 6;
   const nameOk = name.trim().length >= 2;
   const valid = codeOk && nameOk;
 
@@ -32,17 +37,21 @@ export default function OtpScreen() {
     if (!valid || !pendingPhone) return;
     setLoading(true);
     try {
-      // Si code à 6 chiffres → on tente la vérification réelle via la RPC.
-      // Si elle échoue (mauvais code, expiré), on bloque.
-      // Si code à 4 chiffres → mode démo (V0 sans WhatsApp), on passe direct.
-      if (codeDigits.length === 6) {
-        const ok = await verifyOtp(pendingPhone, codeDigits);
-        if (!ok) {
-          Alert.alert('Code invalide', 'Le code ne correspond pas ou a expiré. Demande un nouveau code.');
-          return;
-        }
+      // Toute la validation se fait côté serveur (RPC otp_login) : il vérifie
+      // le code, applique les limites anti-brute-force, et ne renvoie les
+      // identifiants de session qu'en cas de succès. Aucun bypass côté client.
+      const result = await otpLogin(pendingPhone, codeDigits, name);
+      if (!result.ok) {
+        Alert.alert('Code invalide', OTP_ERRORS[result.reason] ?? 'Vérification impossible. Réessaie.');
+        return;
       }
-      await signInWithPhone(pendingPhone, name);
+
+      await signInWithVerifiedOtp({
+        phone: pendingPhone,
+        fullName: name,
+        email: result.email,
+        password: result.password,
+      });
       // Le user vient de changer : on vide le cache pour repartir propre.
       queryClient.clear();
       router.replace('/(tabs)');

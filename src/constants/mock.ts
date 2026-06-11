@@ -83,6 +83,7 @@ export const DEMO_PROFILE: UserProfile = {
   fullName: 'Faouez',
   phone: '+216 ** *** ***',
   avatarTint: 'yellow',
+  country: 'TN',
   role: 'both',
   isVerified: true,
   level: 3,

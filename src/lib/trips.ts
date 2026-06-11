@@ -39,6 +39,7 @@ export function mapTripFromDb(row: TripWithDriver): Trip {
     full_name: 'Conducteur',
     avatar_url: null,
     avatar_key: null,
+    country: 'TN',
     role: 'driver',
     is_verified: false,
     rating_avg: 0,
@@ -60,19 +61,25 @@ export function mapTripFromDb(row: TripWithDriver): Trip {
     pricePerSeat: row.price_per_seat,
     status: row.status,
     isRecurring: row.is_recurring,
+    country: (row.country as 'TN' | 'MA') ?? 'TN',
   };
 }
 
 /**
- * Fetch des trajets ouverts.
+ * Fetch des trajets ouverts, CLOISONNÉS PAR PAYS (Cap Maroc M2).
  * - Si origin + destination sont fournis → filtre par labels exacts (V0 simple).
- * - Sinon → liste tous les trajets ouverts à venir, triés par date.
+ * - Sinon → liste tous les trajets ouverts à venir du pays, triés par date.
  */
-async function fetchTrips(origin: string | null, destination: string | null): Promise<Trip[]> {
+async function fetchTrips(
+  origin: string | null,
+  destination: string | null,
+  country: 'TN' | 'MA',
+): Promise<Trip[]> {
   let query = supabase
     .from('trips')
     .select('*, driver:profiles!trips_driver_id_fkey(*)')
     .eq('status', 'open')
+    .eq('country', country)
     .gt('seats_available', 0)
     .gte('departure_time', new Date().toISOString())
     .order('departure_time', { ascending: true })
@@ -86,10 +93,14 @@ async function fetchTrips(origin: string | null, destination: string | null): Pr
   return (data as unknown as TripWithDriver[]).map(mapTripFromDb);
 }
 
-export function useSearchTrips(origin: string | null, destination: string | null) {
+export function useSearchTrips(
+  origin: string | null,
+  destination: string | null,
+  country: 'TN' | 'MA' = 'TN',
+) {
   return useQuery({
-    queryKey: ['trips', 'search', origin, destination],
-    queryFn: () => fetchTrips(origin, destination),
+    queryKey: ['trips', 'search', origin, destination, country],
+    queryFn: () => fetchTrips(origin, destination, country),
     staleTime: 30_000,
   });
 }

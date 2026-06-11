@@ -38,6 +38,8 @@ export type Trip = {
   isRecurring?: boolean;
   /** Détour estimé en minutes pour un match waypoint. */
   detourMinutes?: number;
+  /** Pays du trajet ('TN' | 'MA') — détermine la devise affichée. */
+  country: 'TN' | 'MA';
 };
 
 export type Conversation = {
@@ -72,6 +74,8 @@ export type UserProfile = {
   avatarTint?: 'orange' | 'navy' | 'yellow';
   /** Cle d un avatar Machii predefini (cf avatarsCatalog). Null = fallback initiale. */
   avatarKey?: string | null;
+  /** Pays de l'utilisateur ('TN' | 'MA'), déduit du préfixe téléphonique. */
+  country: 'TN' | 'MA';
   role: Role;
   isVerified: boolean;
   level: number;

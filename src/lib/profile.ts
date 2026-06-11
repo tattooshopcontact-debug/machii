@@ -30,6 +30,7 @@ export function mapProfileFromDb(row: ProfileRow): UserProfile {
     avatarUrl: row.avatar_url,
     avatarTint: pickTint(row.id),
     avatarKey: row.avatar_key,
+    country: row.country ?? 'TN',
     role: row.role,
     isVerified: row.is_verified,
     level: row.level,

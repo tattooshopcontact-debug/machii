@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Logo, Text } from '@/components/ui';
+import { COUNTRIES, type Country } from '@/constants/cities';
 import { describeError } from '@/lib/errors';
 import { sendOtp } from '@/lib/otp';
 import { useAuthStore } from '@/stores/authStore';
@@ -13,15 +14,16 @@ export default function PhoneScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const setPendingPhone = useAuthStore((s) => s.setPendingPhone);
+  const [country, setCountry] = useState<Country>(COUNTRIES[0]);
   const [local, setLocal] = useState('');
   const [sending, setSending] = useState(false);
 
   const digits = local.replace(/\D/g, '');
-  const valid = digits.length === 8; // numéro tunisien
+  const valid = digits.length === country.phoneLength;
 
   async function onSubmit() {
     if (!valid) return;
-    const phone = `+216${digits}`;
+    const phone = `${country.dialCode}${digits}`;
     setSending(true);
     try {
       // Envoie le code via WhatsApp Cloud API (si configuré).
@@ -54,7 +56,9 @@ export default function PhoneScreen() {
       <View style={[styles.hero, { paddingTop: insets.top + spacing.xxl }]}>
         <Logo size={40} inverted />
         <Text variant="body" color="rgba(255,255,255,0.85)" style={styles.tagline}>
-          L'app de covoiturage la plus sûre de Tunisie
+          {country.code === 'MA'
+            ? "L'app de covoiturage la plus sûre du Maroc"
+            : "L'app de covoiturage la plus sûre de Tunisie"}
         </Text>
       </View>
 
@@ -64,17 +68,44 @@ export default function PhoneScreen() {
           On t'envoie un code par WhatsApp pour te connecter.
         </Text>
 
+        {/* Sélecteur de pays (Cap Maroc M1) */}
+        <View style={styles.countryRow}>
+          {COUNTRIES.map((c) => {
+            const active = country.code === c.code;
+            return (
+              <Pressable
+                key={c.code}
+                onPress={() => {
+                  setCountry(c);
+                  setLocal('');
+                }}
+                style={[styles.countryChip, active && styles.countryChipActive]}
+              >
+                <Text style={{ fontSize: fontSize.md }}>{c.flag}</Text>
+                <Text
+                  variant="label"
+                  color={active ? colors.textOnPrimary : colors.textPrimary}
+                >
+                  {c.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
         <View style={styles.inputRow}>
           <View style={styles.prefix}>
-            <Text style={styles.prefixText}>🇹🇳 +216</Text>
+            <Text style={styles.prefixText}>
+              {country.flag} {country.dialCode}
+            </Text>
           </View>
           <TextInput
             value={local}
             onChangeText={setLocal}
             keyboardType="number-pad"
-            placeholder="22 543 891"
+            placeholder={country.phonePlaceholder}
             placeholderTextColor={colors.textMuted}
-            maxLength={11}
+            maxLength={country.phoneLength + 3}
             style={styles.input}
             autoFocus
           />
@@ -89,7 +120,9 @@ export default function PhoneScreen() {
         />
 
         <Text variant="caption" center style={{ marginTop: spacing.lg }}>
-          En continuant, tu acceptes les CGU de Machii. Covoiturage gratuit — loi n° 2004-33.
+          {country.code === 'MA'
+            ? 'En continuant, tu acceptes les CGU de Machii. Covoiturage = partage de frais entre particuliers, sans but lucratif.'
+            : 'En continuant, tu acceptes les CGU de Machii. Covoiturage gratuit — loi n° 2004-33.'}
         </Text>
       </View>
     </KeyboardAvoidingView>
@@ -106,7 +139,24 @@ const styles = StyleSheet.create({
     borderTopRightRadius: radius.xl,
     padding: spacing.xl,
   },
-  inputRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },
+  countryRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },
+  countryChip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  countryChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  inputRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
   prefix: {
     backgroundColor: colors.surface,
     borderRadius: radius.md,
