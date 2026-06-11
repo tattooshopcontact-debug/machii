@@ -148,3 +148,55 @@
 3. **Suggestions intelligentes (#10)** : les suggestions waypoint doivent arriver en **notifications non bloquantes** (ramener l'utilisateur dans l'app, pas l'interrompre).
 
 Pré-requis business du cadrage (rappel vault) toujours ouverts : INNORPI classes 9/39/42 + domaines machii.com/.tn/.app. La condition "pas avant le lancement d'un des 4 projets actifs" est caduque (Machii est parti en premier, assumé).
+
+---
+
+## ANNEXE 3 — Idées & astuces récupérées de la version Flutter (mai 2026)
+
+> Sources : ancien projet Flutter `D:\machii\decisions.md` (24 décisions) + `D:\machii\mockups.md` (12 écrans détaillés). Flutter est **abandonné** (remplacé par Expo/RN), mais ces specs de conception restent valables. On ne garde QUE ce qui n'est pas déjà dans les annexes 1 et 2. À porter dans l'app Expo au fil des blocs.
+
+### A. Spec gamification COMPLÈTE (décision #17) — pour le Bloc C
+
+**Barème XP** : +10 / trajet · +5 / notation validée · +20 / parrainage · +50 / achievement.
+
+**5 thèmes visuels débloquables par paliers** (chacun = une palette qui repeint l'app) :
+| Thème | Déblocage | Couleurs |
+|---|---|---|
+| V1 Original | gratuit (défaut) | navy #1B3D6E + jaune #FFD400 |
+| V2 Nature | 100 XP | vert sapin + ocre |
+| V3 Moderne | 300 XP | bleu marine + corail |
+| V4 Premium | 600 XP | bordeaux + or doux |
+| Sahara | 1000 XP | sable + bleu nuit |
+
+**8 achievements** (badge + parfois thème spécial) : 🏆 Founding Member (100 premiers) · ⭐ Triple Axe (Tunis+Sousse+Sfax) · 💛 Cœur Généreux (trajets gratuits) · 🛡️ Fiable (0 no-show) · 🌙 Aïd · 📿 Ramadan · 🇹🇳 Indépendance · ⚡ Excellence. Les 4 événementiels (Aïd/Ramadan/Indépendance + saisonniers) se débloquent en faisant un trajet pendant la période.
+
+**Écran "Ma progression"** (mockup #12) : barre XP "X restants avant niveau N+1" + 5 cards thèmes avec mini-bandes de couleurs + grille achievements 4×2 + tip contextuel ("Fais 1 trajet pendant l'Aïd pour débloquer le thème Aïd").
+
+> État Expo : XP/level en DB + 8 avatars débloquables ✅. MANQUE : attribution AUTO de l'XP, les 5 thèmes-palettes, les 8 achievements nommés, l'écran progression.
+
+### B. Anti-contournement chat (décision #8) — exact, pour le Bloc A
+
+- **Mots-clés à bloquer** : `whatsapp`, `telegram`, `signal`, `viber`, `messenger`, `appelle`, `téléphone` + motifs `+216` / `+212` / suites de 8-9 chiffres.
+- **Escalade** : message bloqué (flouté + cadre rouge "Bloqué par Machii") → **Avertissement 1/3** → **2/3** → **3/3 = suspension 24 h** → ban si récidive.
+- Bandeau jaune permanent dans le chat : « Échange ton numéro et tu perds la protection Machii. »
+
+> État Expo : blocage regex ✅, mais PAS de compteur d'avertissements ni de suspension. À ajouter.
+
+### C. Micro-astuces UX à reprendre, écran par écran
+
+- **Accueil** : bouton **swap départ↔arrivée** ; badges prix différenciés (jaune "25 DT" / vert "Gratuit" / gris "À négocier") ; pull-to-refresh.
+- **Détail trajet (avant accept.)** : véhicule **générique** "Renault Clio · bleue" + encart cadenas « plaque & photo après confirmation » ; chips préférences conducteur (Non-fumeur / Musique OK / Discussion) ; lien **« Signaler ce trajet »** → catégories (Faux profil / Comportement / Autre).
+- **Détail trajet (après accept.)** : encart vert « réservation confirmée » + **compte à rebours** « Départ dans 17 h 32 ».
+- **Résultats recherche** : barre de **chips filtres** (Heure / ≤ prix / places / Vérifié / Aujourd'hui) ; card waypoint à **bordure jaune** « ⚡ MATCH INTELLIGENT · +15 min » (vert) ; badge « NOUVEAU », état « Complet » grisé.
+- **Création trajet** : indicateur **« ÉTAPE 1/1 »** (pas de wizard) ; bandeau qui **résume la récurrence en clair** ; **bagages** (3 options) + toggle **animaux** ; participation marquée **« Facultatif »**.
+- **Notation** : si « Plus tard » → **rappel push après 24 h** ; bandeau « +5 XP ».
+- **SOS** : statut de livraison par contact (✓ Lu / Envoyé) ; numéros masqués « +216 22 ••• ••• » ; désactivation = **appui long 5 s** puis SMS « fausse alerte ».
+- **KYC** : badge **« Vérifié+ »** payant en upsell V2 (préparer sans pousser) ; note « tu ne pourras pas publier sans vérification complète » (= gating publication).
+- **Mes trajets** : onglets **À venir / Passés / Tous** ; **FAB** « + Nouveau trajet » ; menu **⋯** (Modifier / Dupliquer / Annuler) ; occurrence répétitive **désactivable/réactivable**.
+- **Note** : n'afficher le score qu'à partir de **3-5 trajets notés** (évite le biais petit échantillon).
+
+### D. Astuces design & composants
+
+- **Tokens** : `secondary` et `warning` partagent volontairement l'orange **#F18A4D**.
+- Préférer des **icônes vectorielles** (lucide / phosphor) aux emojis Unicode pour les éléments d'UI sérieux.
+- Composants partagés du design system Flutter à avoir en équivalent Expo : **TimelinePoints** (départ→arrivée pointillé), **StarsRating**, **LevelBadge** (pilule niveau+XP), **AchievementTile**, **Disclaimer** (bandeau légal — on a `LegalBanner` ✅).
