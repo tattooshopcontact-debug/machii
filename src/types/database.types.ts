@@ -22,6 +22,7 @@ export type Database = {
           phone: string | null;
           full_name: string;
           avatar_url: string | null;
+          avatar_key: string | null;
           role: Role;
           is_verified: boolean;
           rating_avg: number;
@@ -36,6 +37,7 @@ export type Database = {
           phone?: string | null;
           full_name?: string;
           avatar_url?: string | null;
+          avatar_key?: string | null;
           role?: Role;
           is_verified?: boolean;
           rating_avg?: number;

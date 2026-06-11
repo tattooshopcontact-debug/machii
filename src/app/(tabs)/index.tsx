@@ -36,7 +36,8 @@ export default function HomeScreen() {
             <Logo size={24} inverted />
             <Avatar
               name={user?.fullName ?? 'F'}
-              uri={user?.avatarUrl ?? undefined}
+              uri={user?.avatarKey ? null : user?.avatarUrl ?? undefined}
+              assetKey={user?.avatarKey}
               tint={user?.avatarTint ?? 'yellow'}
               size={40}
             />

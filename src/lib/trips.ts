@@ -38,6 +38,7 @@ export function mapTripFromDb(row: TripWithDriver): Trip {
     phone: null,
     full_name: 'Conducteur',
     avatar_url: null,
+    avatar_key: null,
     role: 'driver',
     is_verified: false,
     rating_avg: 0,

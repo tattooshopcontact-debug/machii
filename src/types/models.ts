@@ -70,6 +70,8 @@ export type UserProfile = {
   phone: string;
   avatarUrl?: string | null;
   avatarTint?: 'orange' | 'navy' | 'yellow';
+  /** Cle d un avatar Machii predefini (cf avatarsCatalog). Null = fallback initiale. */
+  avatarKey?: string | null;
   role: Role;
   isVerified: boolean;
   level: number;

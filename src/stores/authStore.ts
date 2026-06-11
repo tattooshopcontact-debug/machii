@@ -59,7 +59,12 @@ type AuthState = {
 
   /** Met à jour le profil courant en DB et dans le store. */
   updateProfile: (
-    patch: Partial<{ fullName: string; role: UserProfile['role']; bio: string }>,
+    patch: Partial<{
+      fullName: string;
+      role: UserProfile['role'];
+      bio: string;
+      avatarKey: string | null;
+    }>,
   ) => Promise<void>;
 
   signOut: () => Promise<void>;
@@ -147,6 +152,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (patch.fullName !== undefined) dbPatch.full_name = patch.fullName;
     if (patch.role !== undefined) dbPatch.role = patch.role;
     if (patch.bio !== undefined) dbPatch.bio = patch.bio;
+    if (patch.avatarKey !== undefined) dbPatch.avatar_key = patch.avatarKey;
 
     const { data: profileRow, error } = await supabase
       .from('profiles')

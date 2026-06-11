@@ -65,6 +65,7 @@ async function fetchMyConversations(userId: string): Promise<ConversationListIte
       full_name: 'Utilisateur',
       phone: null,
       avatar_url: null,
+      avatar_key: null,
       role: 'passenger' as const,
       is_verified: false,
       rating_avg: 0,

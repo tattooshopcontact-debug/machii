@@ -3,6 +3,7 @@ import { useId } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Circle, Defs, Ellipse, RadialGradient, Stop } from 'react-native-svg';
 
+import { findAvatar } from '@/lib/avatarsCatalog';
 import { colors, fonts, palette } from '@/theme';
 
 import { Text } from './Text';
@@ -12,6 +13,8 @@ type Tint = 'orange' | 'navy' | 'yellow';
 type AvatarProps = {
   name: string;
   uri?: string | null;
+  /** Cle d un avatar Machii predefini (cf avatarsCatalog). Prioritaire sur uri si fourni. */
+  assetKey?: string | null;
   size?: number;
   /** Teinte de la sphère glossy si pas de photo. */
   tint?: Tint;
@@ -26,15 +29,18 @@ const spheres: Record<Tint, { hi: string; bg: string; lo: string; fg: string }> 
 };
 
 /** Avatar "sphère glossy" 3D : reflet spéculaire + ombre projetée. */
-export function Avatar({ name, uri, size = 48, tint = 'navy', verified = false }: AvatarProps) {
+export function Avatar({ name, uri, assetKey, size = 48, tint = 'navy', verified = false }: AvatarProps) {
   const u = useId();
   const initial = name?.trim()?.charAt(0)?.toUpperCase() ?? '?';
   const s = spheres[tint];
   const badge = Math.max(14, size * 0.3);
+  const presetAvatar = assetKey ? findAvatar(assetKey) : undefined;
 
   return (
     <View style={{ width: size, height: size }}>
-      {uri ? (
+      {presetAvatar ? (
+        <Image source={presetAvatar.source} style={{ width: size, height: size, borderRadius: size / 2 }} contentFit="cover" />
+      ) : uri ? (
         <Image source={{ uri }} style={{ width: size, height: size, borderRadius: size / 2 }} contentFit="cover" />
       ) : (
         <View style={{ width: size, height: size }}>

@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AvatarPicker } from '@/components/AvatarPicker';
 import { Avatar, Button, Card, Screen, Text } from '@/components/ui';
 import { pickImageFromLibrary, uploadAvatar } from '@/lib/avatars';
+import type { AvatarKey } from '@/lib/avatarsCatalog';
 import { describeError } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
@@ -29,6 +31,7 @@ export default function EditProfileScreen() {
   const [role, setRole] = useState<Role>('both');
   const [bio, setBio] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarKey, setAvatarKey] = useState<AvatarKey | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -37,6 +40,7 @@ export default function EditProfileScreen() {
     setFullName(user.fullName);
     setRole(user.role);
     setAvatarUrl(user.avatarUrl ?? null);
+    setAvatarKey((user.avatarKey as AvatarKey | null | undefined) ?? null);
     // user.bio n'est pas exposé dans UserProfile actuellement → on partira vide.
   }, [user]);
 
@@ -64,9 +68,13 @@ export default function EditProfileScreen() {
   }
 
   const nameOk = fullName.trim().length >= 2;
+  const userAvatarKey = (user?.avatarKey as AvatarKey | null | undefined) ?? null;
   const dirty =
     user != null &&
-    (fullName.trim() !== user.fullName || role !== user.role || bio.trim().length > 0);
+    (fullName.trim() !== user.fullName ||
+      role !== user.role ||
+      bio.trim().length > 0 ||
+      avatarKey !== userAvatarKey);
   const canSave = nameOk && dirty && !submitting;
 
   async function onSave() {
@@ -76,6 +84,7 @@ export default function EditProfileScreen() {
       await updateProfile({
         fullName: fullName.trim(),
         role,
+        avatarKey,
         ...(bio.trim() ? { bio: bio.trim() } : {}),
       });
       Alert.alert('Profil mis à jour', 'Tes changements ont été enregistrés.', [
@@ -111,11 +120,13 @@ export default function EditProfileScreen() {
       <Screen contentStyle={{ gap: spacing.md, paddingTop: spacing.lg }}>
         <Card style={styles.avatarCard}>
           <Pressable onPress={onPickAvatar} disabled={uploadingAvatar} style={styles.avatarPressable}>
-            {avatarUrl ? (
-              <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
-            ) : (
-              <Avatar name={fullName || user.fullName} tint={user.avatarTint} size={104} />
-            )}
+            <Avatar
+              name={fullName || user.fullName}
+              uri={avatarKey ? null : avatarUrl}
+              assetKey={avatarKey}
+              tint={user.avatarTint}
+              size={104}
+            />
             <View style={styles.avatarOverlay}>
               {uploadingAvatar ? (
                 <ActivityIndicator color={colors.textOnPrimary} />
@@ -125,8 +136,16 @@ export default function EditProfileScreen() {
             </View>
           </Pressable>
           <Text variant="caption" color={colors.textSecondary} center>
-            {uploadingAvatar ? 'Envoi…' : 'Touche pour changer ta photo'}
+            {uploadingAvatar
+              ? 'Envoi…'
+              : avatarKey
+                ? 'Avatar Machii — touche pour mettre ta photo'
+                : 'Touche pour changer ta photo'}
           </Text>
+        </Card>
+
+        <Card style={{ gap: spacing.sm }}>
+          <AvatarPicker user={user} selected={avatarKey} onSelect={setAvatarKey} />
         </Card>
 
         <Card style={{ gap: spacing.sm }}>

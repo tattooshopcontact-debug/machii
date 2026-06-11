@@ -44,7 +44,8 @@ export default function ProfileScreen() {
         <Card style={styles.identity}>
           <Avatar
             name={user.fullName}
-            uri={user.avatarUrl ?? undefined}
+            uri={user.avatarKey ? null : user.avatarUrl ?? undefined}
+            assetKey={user.avatarKey}
             tint={user.avatarTint}
             size={76}
             verified={user.isVerified}

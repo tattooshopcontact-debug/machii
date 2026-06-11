@@ -29,6 +29,7 @@ export function mapProfileFromDb(row: ProfileRow): UserProfile {
     phone: row.phone ?? '',
     avatarUrl: row.avatar_url,
     avatarTint: pickTint(row.id),
+    avatarKey: row.avatar_key,
     role: row.role,
     isVerified: row.is_verified,
     level: row.level,
