@@ -40,11 +40,17 @@ export async function uploadAvatar(
   const ext = mime.includes('png') ? 'png' : mime.includes('webp') ? 'webp' : 'jpg';
   const path = `${userId}/avatar.${ext}`;
 
-  // React Native : on doit lire le fichier en blob via fetch.
+  // React Native : fetch(uri).blob() renvoie souvent un blob vide ou non sérialisable.
+  // On lit l asset en ArrayBuffer puis on transmet un Uint8Array a Supabase JS.
   const response = await fetch(asset.uri);
-  const blob = await response.blob();
+  const arrayBuffer = await response.arrayBuffer();
+  const bytes = new Uint8Array(arrayBuffer);
 
-  const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, blob, {
+  if (bytes.byteLength === 0) {
+    throw new Error('Le fichier image est vide. Réessaie en sélectionnant une autre photo.');
+  }
+
+  const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, bytes, {
     contentType: mime,
     upsert: true,
     cacheControl: '3600',
