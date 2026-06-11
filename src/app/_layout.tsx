@@ -66,6 +66,7 @@ export default function RootLayout() {
             <Stack.Screen name="trip/rate/[id]" options={{ presentation: 'modal' }} />
             <Stack.Screen name="profile/sos" />
             <Stack.Screen name="profile/delete" />
+            <Stack.Screen name="request/create" options={{ presentation: 'modal' }} />
           </Stack>
         </QueryClientProvider>
       </SafeAreaProvider>

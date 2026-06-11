@@ -113,6 +113,38 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['bookings']['Insert']>;
         Relationships: [];
       };
+      trip_requests: {
+        Row: {
+          id: string;
+          passenger_id: string;
+          origin_label: string;
+          destination_label: string;
+          origin: unknown;
+          destination: unknown;
+          departure_start: string;
+          departure_end: string;
+          seats_needed: number;
+          message: string | null;
+          status: 'open' | 'matched' | 'cancelled';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          passenger_id: string;
+          origin_label: string;
+          destination_label: string;
+          origin: unknown;
+          destination: unknown;
+          departure_start: string;
+          departure_end: string;
+          seats_needed?: number;
+          message?: string | null;
+          status?: 'open' | 'matched' | 'cancelled';
+        };
+        Update: Partial<Database['public']['Tables']['trip_requests']['Insert']>;
+        Relationships: [];
+      };
       conversations: {
         Row: {
           id: string;

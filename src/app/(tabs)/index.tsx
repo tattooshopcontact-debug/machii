@@ -8,6 +8,7 @@ import { TripCard } from '@/components/TripCard';
 import { Avatar, Button, Card, Logo, Text } from '@/components/ui';
 import { useMyIncomingBookings } from '@/lib/bookings';
 import { useMyPublishedTrips, useSearchTrips } from '@/lib/trips';
+import { useOpenTripRequests, type TripRequestWithPassenger } from '@/lib/tripRequests';
 import { resolveEffectiveMode, useAppModeStore, type AppMode } from '@/stores/appModeStore';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, radius, shadows, spacing, TAB_BAR_HEIGHT } from '@/theme';
@@ -211,10 +212,17 @@ function PassengerBody({ userId }: { userId: string | undefined }) {
         )}
 
         {!tripsLoading && tripsPreview.length === 0 && (
-          <Card style={{ backgroundColor: colors.surfaceAlt }}>
+          <Card style={{ backgroundColor: colors.surfaceAlt, gap: spacing.md }}>
             <Text variant="body" color={colors.textSecondary}>
-              Aucun trajet ouvert pour le moment. Reviens bientôt ou publie le tien.
+              Aucun trajet ouvert pour le moment.{'\n'}
+              Publie ta demande : les conducteurs sur ta route te contacteront.
             </Text>
+            <Button
+              label="Publier ma demande"
+              onPress={() => router.push('/request/create' as never)}
+              left={<Ionicons name="paper-plane-outline" size={18} color={colors.textOnPrimary} />}
+              variant="secondary"
+            />
           </Card>
         )}
 
@@ -233,6 +241,7 @@ function DriverBody({ userId }: { userId: string | undefined }) {
   const router = useRouter();
   const myTrips = useMyPublishedTrips(userId);
   const incoming = useMyIncomingBookings(userId);
+  const openRequests = useOpenTripRequests({ excludeUserId: userId, limit: 5 });
 
   const openTrips = useMemo(
     () => (myTrips.data ?? []).filter((t) => t.status === 'open' || t.status === 'full'),
@@ -243,6 +252,7 @@ function DriverBody({ userId }: { userId: string | undefined }) {
     [incoming.data],
   );
   const upcomingPreview = openTrips.slice(0, 3);
+  const requestsPreview = (openRequests.data ?? []).slice(0, 3);
 
   return (
     <>
@@ -279,6 +289,19 @@ function DriverBody({ userId }: { userId: string | undefined }) {
         </Pressable>
       </View>
 
+      {requestsPreview.length > 0 && (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text variant="heading">
+              Passagers qui cherchent ({requestsPreview.length})
+            </Text>
+          </View>
+          {requestsPreview.map((req) => (
+            <TripRequestRow key={req.id} request={req} />
+          ))}
+        </View>
+      )}
+
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text variant="heading">Mes prochains trajets</Text>
@@ -307,6 +330,53 @@ function DriverBody({ userId }: { userId: string | undefined }) {
       </View>
     </>
   );
+}
+
+// ============================================================================
+// Ligne demande passager — affichee dans la section conducteur
+// ============================================================================
+function TripRequestRow({ request }: { request: TripRequestWithPassenger }) {
+  const router = useRouter();
+  const start = new Date(request.departure_start);
+  const dayLabel = formatDayLabel(start);
+  const timeWindow = formatHourWindow(start, new Date(request.departure_end));
+  const passengerName = request.passenger?.full_name ?? 'Passager';
+
+  return (
+    <Pressable
+      onPress={() => router.push(`/trip/create?prefilledRequestId=${request.id}` as never)}
+      style={styles.requestRow}
+    >
+      <View style={styles.requestIcon}>
+        <Ionicons name="person" size={18} color={colors.primary} />
+      </View>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text variant="bodyMedium" color={colors.primary}>
+          {request.origin_label} → {request.destination_label}
+        </Text>
+        <Text variant="caption" color={colors.textSecondary}>
+          {passengerName} · {dayLabel} {timeWindow} · {request.seats_needed} place
+          {request.seats_needed > 1 ? 's' : ''}
+        </Text>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+    </Pressable>
+  );
+}
+
+function formatDayLabel(d: Date): string {
+  const now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  if (sameDay) return "Aujourd'hui";
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  if (d.toDateString() === tomorrow.toDateString()) return 'Demain';
+  return d.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' });
+}
+
+function formatHourWindow(start: Date, end: Date): string {
+  const h = (d: Date) => String(d.getHours()).padStart(2, '0') + 'h';
+  return `${h(start)}–${h(end)}`;
 }
 
 const styles = StyleSheet.create({
@@ -417,5 +487,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: spacing.xs,
+  },
+
+  // Trip request row (demande passager dans accueil conducteur)
+  requestRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.card,
+  },
+  requestIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
