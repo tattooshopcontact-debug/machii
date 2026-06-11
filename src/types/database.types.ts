@@ -113,6 +113,27 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['bookings']['Insert']>;
         Relationships: [];
       };
+      trip_share_links: {
+        Row: {
+          id: string;
+          token: string;
+          trip_id: string;
+          user_id: string;
+          expires_at: string;
+          revoked: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          token?: string;
+          trip_id: string;
+          user_id: string;
+          expires_at?: string;
+          revoked?: boolean;
+        };
+        Update: Partial<Database['public']['Tables']['trip_share_links']['Insert']>;
+        Relationships: [];
+      };
       trip_live_positions: {
         Row: {
           trip_id: string;

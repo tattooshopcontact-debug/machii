@@ -10,6 +10,7 @@ import { useCreateBooking } from '@/lib/bookings';
 import { describeError } from '@/lib/errors';
 import { formatDay, formatPrice, formatTime } from '@/lib/format';
 import { useLivePosition, useShareLivePosition } from '@/lib/liveTracking';
+import { useShareTrip } from '@/lib/tripShare';
 import { useTrip } from '@/lib/trips';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, fontSize, radius, spacing } from '@/theme';
@@ -26,12 +27,33 @@ export default function TripDetailScreen() {
   const isOwnTrip = !!user && !!trip && trip.driver.id === user.id;
   const canRequest = !!user && !!trip && !isOwnTrip && trip.seatsAvailable > 0;
 
-  // Temps réel (décision #11) : le conducteur partage, les passagers acceptés voient.
-  const share = useShareLivePosition(isOwnTrip ? trip?.id : undefined, user?.id);
+  // Temps réel (décision #11) : chacun peut partager SA position sur ce trajet.
+  // Conducteur -> visible par les passagers acceptés (in-app).
+  // Passager   -> visible par son proche via le lien web (#11-B).
+  const myShare = useShareLivePosition(trip?.id, user?.id);
   const livePosition = useLivePosition(
     !isOwnTrip ? trip?.id : undefined,
     !isOwnTrip ? trip?.driver.id : undefined,
   );
+
+  // #11-B : partage du trajet à un proche (lien web 4h).
+  const shareTrip = useShareTrip();
+
+  async function onShareToContact() {
+    if (!trip || !user) return;
+    try {
+      await shareTrip.mutateAsync({
+        tripId: trip.id,
+        userId: user.id,
+        originLabel: trip.origin,
+        destinationLabel: trip.destination,
+      });
+      // Active aussi le partage de position pour que le proche voie le point bouger.
+      if (!myShare.sharing) await myShare.start();
+    } catch (e: unknown) {
+      Alert.alert('Partage impossible', describeError(e));
+    }
+  }
 
   function onRequest() {
     if (!trip || !user) return;
@@ -121,21 +143,37 @@ export default function TripDetailScreen() {
 
             {isOwnTrip && (
               <Button
-                label={share.sharing ? 'Arrêter le partage de position' : 'Partager ma position en direct'}
-                variant={share.sharing ? 'outline' : 'secondary'}
+                label={myShare.sharing ? 'Arrêter le partage de position' : 'Partager ma position en direct'}
+                variant={myShare.sharing ? 'outline' : 'secondary'}
                 left={
                   <Ionicons
-                    name={share.sharing ? 'location' : 'location-outline'}
+                    name={myShare.sharing ? 'location' : 'location-outline'}
                     size={18}
-                    color={share.sharing ? colors.primary : colors.textOnPrimary}
+                    color={myShare.sharing ? colors.primary : colors.textOnPrimary}
                   />
                 }
-                onPress={() => (share.sharing ? share.stop() : share.start())}
+                onPress={() => (myShare.sharing ? myShare.stop() : myShare.start())}
               />
             )}
-            {share.error && (
+
+            {/* #11-B — Partage à un proche : pour TOUT participant (1 tap). */}
+            {user && (
+              <Button
+                label="Partager mon trajet à un proche"
+                variant="outline"
+                left={<Ionicons name="share-social-outline" size={18} color={colors.primary} />}
+                onPress={onShareToContact}
+                loading={shareTrip.isPending}
+              />
+            )}
+            {myShare.sharing && !isOwnTrip && (
+              <Text variant="caption" color={colors.textSecondary} center>
+                Position partagée avec ton proche (s'arrête à la fermeture de l'app ou après 4h)
+              </Text>
+            )}
+            {myShare.error && (
               <Text variant="caption" color={colors.danger} center>
-                {share.error}
+                {myShare.error}
               </Text>
             )}
 

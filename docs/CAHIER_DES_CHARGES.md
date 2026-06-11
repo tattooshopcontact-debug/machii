@@ -23,7 +23,7 @@
 | 9 | Notation multi-critères style BlaBlaCar | ✅ | 4 critères + recalcul rating_avg auto (migration 0008). |
 | 10 | Petites annonces + **suggestions intelligentes + waypoint matching** | 🟡 | Annonces + recherche PostGIS ✅. **Carte trajet ✅ (2026-06-12)**. Waypoint matching (via, détour, suggestions) ⏸️ — la table `trip_waypoints` existe, jamais branchée. |
 | 11-A | Bouton SOS → contacts d'urgence (PAS la police) + raccourci 197 | ✅ | Écran SOS + GPS + SMS + 197. Conforme au cadrage. |
-| 11-B | **Partage de trajet temps réel — opt-in par le PASSAGER, 1 tap, lien web partageable 4h** | 🟡 | Fait le 2026-06-12 : partage **conducteur → passagers acceptés** (Realtime in-app). **MANQUE le cadrage exact** : passager qui partage à un PROCHE (contact d'urgence) + **lien web consultable sans compte** valable 4h. À compléter. |
+| 11-B | **Partage de trajet temps réel — opt-in par le PASSAGER, 1 tap, lien web partageable 4h** | ✅ | **Complet (2026-06-12)** : (a) conducteur → passagers acceptés (Realtime in-app), (b) **bouton "Partager mon trajet à un proche"** pour tout participant → lien web `share.html?t=<token>` consultable SANS compte, position live (Leaflet/OSM, refresh 15 s), expiration 4 h, révocable. Migration 0017 + RPC `get_shared_trip`. |
 | 11-C | **Confirmation d'arrivée symétrique + alerte fallback 30 min aux contacts d'urgence** | ⏸️ | Rien. Dépend de 12-B (codes) pour détecter le départ. |
 | 12-A | Affichage échelonné des infos (plaque + photo véhicule APRÈS acceptation) | 🟡 | Le placeholder "Véhicule communiqué après acceptation" existe sur le détail trajet, mais **pas de saisie véhicule** (marque/couleur/plaque/photo) ni de révélation post-acceptation. Table `vehicles` existe en DB, pas branchée. |
 | 12-B | **Code 4 chiffres SYMÉTRIQUE à la prise en charge** (passager montre son code, conducteur saisit, et réciproquement ; expiration 30 min) | ⏸️ | La colonne `bookings.confirm_code` existe depuis 0001, jamais utilisée. **Prochaine étape en cours.** |
@@ -58,7 +58,7 @@
 ## ROADMAP consolidée (ordre validé par Faouez 2026-06-12)
 
 ### Bloc A — Compléter le cadrage sécurité (en cours)
-1. **#11-B complet** : partage opt-in par le PASSAGER à ses proches → lien web public (page GitHub Pages lisant la position via token), 1 tap, valable 4h
+1. ~~**#11-B complet**~~ ✅ FAIT 2026-06-12 (lien web 4h + position live sans compte)
 2. **#12-B** : codes 4 chiffres symétriques à la prise en charge (UI grand code + saisie, expiration 30 min)
 3. **#11-C** : confirmation d'arrivée symétrique + alerte fallback 30 min aux contacts d'urgence
 4. **#13-B/C/D** : no-show automatique via les codes (+60 min), -1 étoile, ban à 3, contestation
