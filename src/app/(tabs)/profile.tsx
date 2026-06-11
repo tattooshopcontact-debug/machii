@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Avatar, Badge, Button, Card, Screen, ScreenHeader, Text } from '@/components/ui';
 import { useAuthStore } from '@/stores/authStore';
@@ -110,6 +110,17 @@ export default function ProfileScreen() {
         <Text variant="caption" center color={colors.textMuted} style={{ marginTop: spacing.md }}>
           Machii · covoiturage gratuit (loi n° 2004-33)
         </Text>
+
+        {/* Lien discret : exigence Google Play (User Data > Account deletion). */}
+        <Pressable
+          onPress={() => router.push('/profile/delete' as never)}
+          style={styles.deleteLink}
+          hitSlop={8}
+        >
+          <Text variant="caption" center color={colors.textMuted} style={styles.deleteLinkText}>
+            Supprimer mon compte
+          </Text>
+        </Pressable>
       </Screen>
     </View>
   );
@@ -122,4 +133,6 @@ const styles = StyleSheet.create({
   statsRow: { flexDirection: 'row', alignItems: 'center' },
   stat: { flex: 1, alignItems: 'center', gap: 2, paddingVertical: spacing.sm },
   statDivider: { width: 1, height: 48, backgroundColor: colors.border },
+  deleteLink: { alignSelf: 'center', marginTop: spacing.sm, paddingVertical: spacing.xs },
+  deleteLinkText: { textDecorationLine: 'underline' },
 });

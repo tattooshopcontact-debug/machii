@@ -267,6 +267,10 @@ export type Database = {
         Args: { p_phone: string; p_code: string };
         Returns: boolean;
       };
+      delete_my_account: {
+        Args: Record<string, never>;
+        Returns: { ok: boolean; reason?: string; deleted_user?: number; deleted_storage_objects?: number };
+      };
     };
     Enums: {
       role_type: Role;
