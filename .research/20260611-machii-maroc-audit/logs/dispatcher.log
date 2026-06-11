@@ -1,0 +1,9 @@
+2026-06-11T16:12:03+01:00 INIT — audit expansion Maroc pour Machii
+SCOPING DONE — 3 recherches réelles (concurrence, paiements, légal). Dimensions validées.
+DECISION — 4 sous-objectifs => parallélisation via Agent tool natif du harness (équivalent claude -p, meilleure intégration Windows).
+DISPATCH — A:marché B:concurrence C:paiements D:légal — agents général-purpose avec WebSearch/WebFetch, outputs dans child_outputs/.
+2026-06-11T16:22:24+01:00 AGENT A (marché) DONE — 13 WebSearch + 3 WebFetch, fichier A_marche.md écrit
+AGENT B (concurrence) DONE — 14 recherches + 5 fetches. PipPipYalah seul vrai concurrent, virage cash 09/2025, plaintes wallet.
+AGENT C (paiements) DONE — 13 recherches + 3 fetches. Maroc >> Tunisie (13,7M wallets vs 469k). Commission encaissable au Maroc.
+2026-06-11T16:25:04+01:00 AGENT D (légal) DONE — zone grise tolérée, PipPipYalah précédent 8 ans, CNDP obligatoire. 4/4 agents OK.
+2026-06-11T16:29:02+01:00 SYNTHESE DONE — polished_report.md + copies docs/market + vault
