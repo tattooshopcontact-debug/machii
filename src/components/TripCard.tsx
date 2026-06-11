@@ -70,6 +70,7 @@ export function TripCard({ trip, onPress, asMatch = false }: TripCardProps) {
           {formatDay(trip.departureTime)} · {formatTime(trip.departureTime)}
         </Text>
         <View style={styles.footerTags}>
+          {trip.womenOnly && <Badge label="Femmes" tone="recurring" icon="👩" />}
           {trip.isRecurring && <Badge label="Récurrent" tone="recurring" icon="🔄" />}
           <Text style={styles.seats}>
             {trip.seatsAvailable}/{trip.seatsTotal} places

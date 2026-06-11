@@ -32,6 +32,7 @@ export default function EditProfileScreen() {
   const [bio, setBio] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarKey, setAvatarKey] = useState<AvatarKey | null>(null);
+  const [gender, setGender] = useState<'female' | 'male' | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -41,6 +42,7 @@ export default function EditProfileScreen() {
     setRole(user.role);
     setAvatarUrl(user.avatarUrl ?? null);
     setAvatarKey((user.avatarKey as AvatarKey | null | undefined) ?? null);
+    setGender(user.gender ?? null);
     // user.bio n'est pas exposé dans UserProfile actuellement → on partira vide.
   }, [user]);
 
@@ -74,7 +76,8 @@ export default function EditProfileScreen() {
     (fullName.trim() !== user.fullName ||
       role !== user.role ||
       bio.trim().length > 0 ||
-      avatarKey !== userAvatarKey);
+      avatarKey !== userAvatarKey ||
+      gender !== (user.gender ?? null));
   const canSave = nameOk && dirty && !submitting;
 
   async function onSave() {
@@ -85,6 +88,7 @@ export default function EditProfileScreen() {
         fullName: fullName.trim(),
         role,
         avatarKey,
+        gender,
         ...(bio.trim() ? { bio: bio.trim() } : {}),
       });
       Alert.alert('Profil mis à jour', 'Tes changements ont été enregistrés.', [
@@ -193,6 +197,34 @@ export default function EditProfileScreen() {
           })}
         </Card>
 
+        {/* Genre (optionnel) — débloque l'option "trajet entre femmes" (M3). */}
+        <Card style={{ gap: spacing.sm }}>
+          <Text variant="label">Genre (optionnel)</Text>
+          <Text variant="caption" color={colors.textSecondary}>
+            Permet de proposer ou de filtrer les trajets entre femmes.
+          </Text>
+          <View style={styles.genderRow}>
+            {([
+              { value: 'female', label: 'Femme' },
+              { value: 'male', label: 'Homme' },
+              { value: null, label: 'Ne pas préciser' },
+            ] as const).map((opt) => {
+              const active = gender === opt.value;
+              return (
+                <Pressable
+                  key={opt.label}
+                  onPress={() => setGender(opt.value)}
+                  style={[styles.genderChip, active && styles.genderChipActive]}
+                >
+                  <Text variant="label" color={active ? colors.textOnPrimary : colors.textPrimary}>
+                    {opt.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </Card>
+
         <Card style={{ gap: spacing.sm }}>
           <View style={styles.bioHeader}>
             <Text variant="label">À propos (optionnel)</Text>
@@ -222,6 +254,9 @@ export default function EditProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  genderRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  genderChip: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 999, borderWidth: 1, borderColor: '#E2E2E2', backgroundColor: '#FFF' },
+  genderChipActive: { backgroundColor: '#1B3D6E', borderColor: '#1B3D6E' },
   root: { flex: 1, backgroundColor: colors.background },
   avatarCard: { alignItems: 'center', gap: spacing.sm },
   avatarPressable: { position: 'relative' },

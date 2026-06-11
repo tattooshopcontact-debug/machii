@@ -40,6 +40,7 @@ export function mapTripFromDb(row: TripWithDriver): Trip {
     avatar_url: null,
     avatar_key: null,
     country: 'TN',
+    gender: null,
     role: 'driver',
     is_verified: false,
     rating_avg: 0,
@@ -62,6 +63,7 @@ export function mapTripFromDb(row: TripWithDriver): Trip {
     status: row.status,
     isRecurring: row.is_recurring,
     country: (row.country as 'TN' | 'MA') ?? 'TN',
+    womenOnly: row.women_only ?? false,
   };
 }
 

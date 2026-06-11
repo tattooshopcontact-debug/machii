@@ -24,6 +24,7 @@ export type Database = {
           avatar_url: string | null;
           avatar_key: string | null;
           country: 'TN' | 'MA';
+          gender: 'female' | 'male' | null;
           role: Role;
           is_verified: boolean;
           rating_avg: number;
@@ -40,6 +41,7 @@ export type Database = {
           avatar_url?: string | null;
           avatar_key?: string | null;
           country?: 'TN' | 'MA';
+          gender?: 'female' | 'male' | null;
           role?: Role;
           is_verified?: boolean;
           rating_avg?: number;
@@ -69,6 +71,7 @@ export type Database = {
           status: TripStatus;
           is_recurring: boolean;
           country: 'TN' | 'MA';
+          women_only: boolean;
           created_at: string;
         };
         Insert: {
@@ -88,6 +91,7 @@ export type Database = {
           status?: TripStatus;
           is_recurring?: boolean;
           country?: 'TN' | 'MA';
+          women_only?: boolean;
         };
         Update: Partial<Database['public']['Tables']['trips']['Insert']>;
         Relationships: [];

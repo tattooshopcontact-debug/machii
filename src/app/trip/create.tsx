@@ -29,7 +29,11 @@ export default function CreateTripScreen() {
   const [time, setTime] = useState('18:00');
   const [seats, setSeats] = useState(3);
   const [price, setPrice] = useState('');
+  const [womenOnly, setWomenOnly] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Option femmes : proposée uniquement aux conductrices (gender = female).
+  const canOfferWomenOnly = user?.gender === 'female';
 
   const valid = !!origin && !!destination && origin !== destination;
 
@@ -73,6 +77,8 @@ export default function CreateTripScreen() {
         is_recurring: recurring,
         // Cap Maroc M2 : le trajet hérite du pays de la ville de départ.
         country: findCity(origin)?.country ?? user.country,
+        // M3 : trajet entre femmes (seulement si la conductrice l'active).
+        women_only: canOfferWomenOnly && womenOnly,
       });
       if (error) throw error;
 
@@ -181,6 +187,25 @@ export default function CreateTripScreen() {
           </View>
         </Card>
 
+        {/* M3 — Trajet entre femmes (réservé aux conductrices) */}
+        {canOfferWomenOnly && (
+          <Pressable style={styles.womenRow} onPress={() => setWomenOnly((v) => !v)}>
+            <Ionicons
+              name={womenOnly ? 'checkbox' : 'square-outline'}
+              size={22}
+              color={womenOnly ? colors.primary : colors.textMuted}
+            />
+            <View style={{ flex: 1 }}>
+              <Text variant="bodyMedium" color={colors.primary}>
+                👩 Trajet entre femmes uniquement
+              </Text>
+              <Text variant="caption" color={colors.textSecondary}>
+                Seules des passagères pourront réserver ce trajet.
+              </Text>
+            </View>
+          </Pressable>
+        )}
+
         <LegalBanner compact country={user?.country ?? 'TN'} />
 
         <Button
@@ -196,6 +221,7 @@ export default function CreateTripScreen() {
 }
 
 const styles = StyleSheet.create({
+  womenRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, backgroundColor: 'rgba(27,61,110,0.05)', borderRadius: 12 },
   root: { flex: 1, backgroundColor: colors.background },
   header: {
     backgroundColor: colors.primary,

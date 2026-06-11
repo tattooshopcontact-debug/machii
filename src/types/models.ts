@@ -40,6 +40,8 @@ export type Trip = {
   detourMinutes?: number;
   /** Pays du trajet ('TN' | 'MA') — détermine la devise affichée. */
   country: 'TN' | 'MA';
+  /** Trajet réservé aux femmes (M3 Cap Maroc). */
+  womenOnly?: boolean;
 };
 
 export type Conversation = {
@@ -76,6 +78,8 @@ export type UserProfile = {
   avatarKey?: string | null;
   /** Pays de l'utilisateur ('TN' | 'MA'), déduit du préfixe téléphonique. */
   country: 'TN' | 'MA';
+  /** Genre, optionnel — sert au filtre "trajet entre femmes" (M3). */
+  gender?: 'female' | 'male' | null;
   role: Role;
   isVerified: boolean;
   level: number;

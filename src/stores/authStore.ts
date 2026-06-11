@@ -51,6 +51,7 @@ type AuthState = {
       role: UserProfile['role'];
       bio: string;
       avatarKey: string | null;
+      gender: 'female' | 'male' | null;
     }>,
   ) => Promise<void>;
 
@@ -150,6 +151,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (patch.role !== undefined) dbPatch.role = patch.role;
     if (patch.bio !== undefined) dbPatch.bio = patch.bio;
     if (patch.avatarKey !== undefined) dbPatch.avatar_key = patch.avatarKey;
+    if (patch.gender !== undefined) dbPatch.gender = patch.gender;
 
     const { data: profileRow, error } = await supabase
       .from('profiles')
