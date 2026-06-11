@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Logo, Text } from '@/components/ui';
@@ -51,8 +51,14 @@ export default function PhoneScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.root}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
       <View style={[styles.hero, { paddingTop: insets.top + spacing.xxl }]}>
         <Logo size={40} inverted />
         <Text variant="body" color="rgba(255,255,255,0.85)" style={styles.tagline}>
@@ -125,13 +131,15 @@ export default function PhoneScreen() {
             : 'En continuant, tu acceptes les CGU de Machii. Covoiturage gratuit — loi n° 2004-33.'}
         </Text>
       </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.primary },
-  hero: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, paddingHorizontal: spacing.xl },
+  scroll: { flexGrow: 1, justifyContent: 'space-between' },
+  hero: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, paddingHorizontal: spacing.xl, minHeight: 180 },
   tagline: { textAlign: 'center' },
   sheet: {
     backgroundColor: colors.background,
