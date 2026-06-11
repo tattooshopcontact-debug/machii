@@ -4,7 +4,7 @@ import { FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/ui';
-import { CITIES } from '@/constants/cities';
+import { CITIES, type CountryCode } from '@/constants/cities';
 import { colors, fonts, fontSize, radius, spacing } from '@/theme';
 
 type CityPickerProps = {
@@ -13,10 +13,12 @@ type CityPickerProps = {
   /** Couleur du point de la timeline. */
   dotColor: string;
   onSelect: (city: string) => void;
+  /** Cap Maroc M2 : ne lister que les villes du pays de l'utilisateur. */
+  country?: CountryCode;
 };
 
 /** Champ de sélection d'une ville (ouvre une liste modale). */
-export function CityPicker({ label, value, dotColor, onSelect }: CityPickerProps) {
+export function CityPicker({ label, value, dotColor, onSelect, country = 'TN' }: CityPickerProps) {
   const [open, setOpen] = useState(false);
   const insets = useSafeAreaInsets();
 
@@ -43,7 +45,7 @@ export function CityPicker({ label, value, dotColor, onSelect }: CityPickerProps
             </Pressable>
           </View>
           <FlatList
-            data={CITIES}
+            data={CITIES.filter((c) => c.country === country)}
             keyExtractor={(c) => c.name}
             renderItem={({ item }) => (
               <Pressable

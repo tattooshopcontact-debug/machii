@@ -15,6 +15,7 @@ export const DEMO_TRIPS: Trip[] = [
     seatsTotal: 3,
     pricePerSeat: 25,
     status: 'open',
+    country: 'TN',
     isRecurring: true,
   },
   {
@@ -27,6 +28,7 @@ export const DEMO_TRIPS: Trip[] = [
     seatsTotal: 3,
     pricePerSeat: 0,
     status: 'open',
+    country: 'TN',
   },
   {
     id: 't3',
@@ -38,6 +40,7 @@ export const DEMO_TRIPS: Trip[] = [
     seatsTotal: 4,
     pricePerSeat: null,
     status: 'open',
+    country: 'TN',
   },
 ];
 
@@ -53,6 +56,7 @@ export const DEMO_MATCH: Trip = {
   seatsTotal: 3,
   pricePerSeat: 22,
   status: 'open',
+    country: 'TN',
   detourMinutes: 15,
 };
 

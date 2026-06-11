@@ -7,6 +7,7 @@ import { CityPicker } from '@/components/CityPicker';
 import { TripCard } from '@/components/TripCard';
 import { Card, Text } from '@/components/ui';
 import { useSearchTrips } from '@/lib/trips';
+import { useAuthStore } from '@/stores/authStore';
 import { useTripSearchStore } from '@/stores/tripSearchStore';
 import { colors, radius, spacing, TAB_BAR_HEIGHT } from '@/theme';
 
@@ -14,7 +15,8 @@ export default function SearchScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { origin, destination, setOrigin, setDestination, swap } = useTripSearchStore();
-  const { data: trips, isLoading, error } = useSearchTrips(origin, destination);
+  const user = useAuthStore((s) => s.user);
+  const { data: trips, isLoading, error } = useSearchTrips(origin, destination, user?.country ?? 'TN');
 
   return (
     <View style={styles.root}>
@@ -26,9 +28,9 @@ export default function SearchScreen() {
         <Card elevation="floating" style={styles.searchCard}>
           <View style={styles.pickerRow}>
             <View style={{ flex: 1 }}>
-              <CityPicker label="Départ" value={origin} dotColor={colors.accentSecondary} onSelect={setOrigin} />
+              <CityPicker label="Départ" value={origin} dotColor={colors.accentSecondary} onSelect={setOrigin} country={user?.country ?? 'TN'} />
               <View style={styles.divider} />
-              <CityPicker label="Arrivée" value={destination} dotColor={colors.primary} onSelect={setDestination} />
+              <CityPicker label="Arrivée" value={destination} dotColor={colors.primary} onSelect={setDestination} country={user?.country ?? 'TN'} />
             </View>
             <Pressable style={styles.swap} onPress={swap} hitSlop={8}>
               <Ionicons name="swap-vertical" size={20} color={colors.primary} />

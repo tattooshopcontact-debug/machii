@@ -13,7 +13,10 @@ import { resolveEffectiveMode, useAppModeStore, type AppMode } from '@/stores/ap
 import { useAuthStore } from '@/stores/authStore';
 import { colors, radius, shadows, spacing, TAB_BAR_HEIGHT } from '@/theme';
 
-const POPULAR_DESTINATIONS = ['Tunis', 'Sousse', 'Sfax', 'Hammamet', 'Nabeul', 'Djerba'];
+const POPULAR_BY_COUNTRY: Record<'TN' | 'MA', string[]> = {
+  TN: ['Tunis', 'Sousse', 'Sfax', 'Hammamet', 'Nabeul', 'Djerba'],
+  MA: ['Casablanca', 'Rabat', 'Marrakech', 'Tanger', 'Fès', 'Agadir'],
+};
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -56,7 +59,11 @@ export default function HomeScreen() {
           {effectiveMode === 'driver' ? <DriverHero /> : <PassengerHero />}
         </View>
 
-        {effectiveMode === 'driver' ? <DriverBody userId={user?.id} /> : <PassengerBody userId={user?.id} />}
+        {effectiveMode === 'driver' ? (
+          <DriverBody userId={user?.id} country={user?.country ?? 'TN'} />
+        ) : (
+          <PassengerBody userId={user?.id} country={user?.country ?? 'TN'} />
+        )}
       </ScrollView>
     </View>
   );
@@ -165,9 +172,9 @@ function DriverHero() {
 // ============================================================================
 // Corps passager : destinations populaires + trajets dispos
 // ============================================================================
-function PassengerBody({ userId }: { userId: string | undefined }) {
+function PassengerBody({ userId, country }: { userId: string | undefined; country: 'TN' | 'MA' }) {
   const router = useRouter();
-  const { data: tripsAll, isLoading: tripsLoading } = useSearchTrips(null, null);
+  const { data: tripsAll, isLoading: tripsLoading } = useSearchTrips(null, null, country);
   const tripsPreview = (tripsAll ?? []).filter((t) => t.driver.id !== userId).slice(0, 3);
 
   return (
@@ -181,7 +188,7 @@ function PassengerBody({ userId }: { userId: string | undefined }) {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.chipsRow}
         >
-          {POPULAR_DESTINATIONS.map((city) => (
+          {POPULAR_BY_COUNTRY[country].map((city) => (
             <Pressable
               key={city}
               style={styles.chip}
@@ -237,11 +244,11 @@ function PassengerBody({ userId }: { userId: string | undefined }) {
 // ============================================================================
 // Corps conducteur : stats + demandes en attente + mes prochains trajets
 // ============================================================================
-function DriverBody({ userId }: { userId: string | undefined }) {
+function DriverBody({ userId, country }: { userId: string | undefined; country: 'TN' | 'MA' }) {
   const router = useRouter();
   const myTrips = useMyPublishedTrips(userId);
   const incoming = useMyIncomingBookings(userId);
-  const openRequests = useOpenTripRequests({ excludeUserId: userId, limit: 5 });
+  const openRequests = useOpenTripRequests({ excludeUserId: userId, limit: 5, country });
 
   const openTrips = useMemo(
     () => (myTrips.data ?? []).filter((t) => t.status === 'open' || t.status === 'full'),

@@ -92,8 +92,12 @@ export function useMyTripRequests(userId: string | undefined) {
   });
 }
 
-/** Liste des demandes ouvertes visibles par tous les conducteurs (RLS filtre). */
-async function fetchOpenTripRequests(opts: { excludeUserId?: string; limit?: number }) {
+/** Liste des demandes ouvertes du pays, visibles par les conducteurs (RLS filtre). */
+async function fetchOpenTripRequests(opts: {
+  excludeUserId?: string;
+  limit?: number;
+  country?: 'TN' | 'MA';
+}) {
   let query = supabase
     .from('trip_requests')
     .select(
@@ -101,6 +105,7 @@ async function fetchOpenTripRequests(opts: { excludeUserId?: string; limit?: num
        passenger:profiles!trip_requests_passenger_id_fkey(id, full_name, avatar_url, avatar_key, is_verified, rating_avg, level, role)`,
     )
     .eq('status', 'open')
+    .eq('country', opts.country ?? 'TN')
     .gte('departure_end', new Date().toISOString())
     .order('departure_start', { ascending: true })
     .limit(opts.limit ?? 20);
@@ -114,9 +119,11 @@ async function fetchOpenTripRequests(opts: { excludeUserId?: string; limit?: num
   return (data ?? []) as unknown as TripRequestWithPassenger[];
 }
 
-export function useOpenTripRequests(opts: { excludeUserId?: string; limit?: number } = {}) {
+export function useOpenTripRequests(
+  opts: { excludeUserId?: string; limit?: number; country?: 'TN' | 'MA' } = {},
+) {
   return useQuery({
-    queryKey: ['trip_requests', 'open', opts.excludeUserId ?? null, opts.limit ?? null],
+    queryKey: ['trip_requests', 'open', opts.excludeUserId ?? null, opts.limit ?? null, opts.country ?? 'TN'],
     queryFn: () => fetchOpenTripRequests(opts),
     staleTime: 30_000,
   });

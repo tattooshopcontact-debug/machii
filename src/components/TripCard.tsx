@@ -56,7 +56,7 @@ export function TripCard({ trip, onPress, asMatch = false }: TripCardProps) {
           {priceTone === 'free' ? (
             <Badge label="Gratuit" tone="free" />
           ) : (
-            <Text style={styles.price}>{formatPrice(trip.pricePerSeat)}</Text>
+            <Text style={styles.price}>{formatPrice(trip.pricePerSeat, trip.country)}</Text>
           )}
         </View>
       </View>

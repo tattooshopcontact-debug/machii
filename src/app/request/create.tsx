@@ -10,7 +10,7 @@ import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Card, Screen, Text } from '@/components/ui';
-import { CITIES } from '@/constants/cities';
+import { citiesOf, type CountryCode } from '@/constants/cities';
 import { describeError } from '@/lib/errors';
 import { useCreateTripRequest } from '@/lib/tripRequests';
 import { useAuthStore } from '@/stores/authStore';
@@ -103,11 +103,11 @@ export default function CreateTripRequestScreen() {
 
         <Card style={{ gap: spacing.sm }}>
           <Text variant="label">Départ</Text>
-          <CityRow value={origin} onChange={setOrigin} exclude={destination} />
+          <CityRow value={origin} onChange={setOrigin} exclude={destination} country={user?.country ?? 'TN'} />
           <Text variant="label" style={{ marginTop: spacing.sm }}>
             Arrivée
           </Text>
-          <CityRow value={destination} onChange={setDestination} exclude={origin} />
+          <CityRow value={destination} onChange={setDestination} exclude={origin} country={user?.country ?? 'TN'} />
         </Card>
 
         <Card style={{ gap: spacing.sm }}>
@@ -222,14 +222,16 @@ function CityRow({
   value,
   onChange,
   exclude,
+  country,
 }: {
   value: string | null;
   onChange: (v: string) => void;
   exclude?: string | null;
+  country: CountryCode;
 }) {
   return (
     <View style={styles.chipsRow}>
-      {CITIES.filter((c) => c.name !== exclude).map((c) => {
+      {citiesOf(country).filter((c) => c.name !== exclude).map((c) => {
         const active = value === c.name;
         return (
           <Pressable

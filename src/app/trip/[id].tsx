@@ -211,11 +211,11 @@ export default function TripDetailScreen() {
             <Card style={styles.priceCard}>
               <Text variant="body" color={colors.textSecondary}>Participation suggérée</Text>
               <Text variant="title" color={trip.pricePerSeat === 0 ? colors.success : colors.primary}>
-                {formatPrice(trip.pricePerSeat)}
+                {formatPrice(trip.pricePerSeat, trip.country)}
               </Text>
             </Card>
 
-            <LegalBanner compact />
+            <LegalBanner compact country={trip.country} />
           </Screen>
 
           <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>

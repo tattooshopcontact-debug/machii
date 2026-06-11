@@ -103,9 +103,9 @@ export default function CreateTripScreen() {
       <Screen contentStyle={{ gap: spacing.md, paddingTop: spacing.lg }}>
         {/* Trajet */}
         <Card>
-          <CityPicker label="Départ" value={origin} dotColor={colors.accentSecondary} onSelect={setOrigin} />
+          <CityPicker label="Départ" value={origin} dotColor={colors.accentSecondary} onSelect={setOrigin} country={user?.country ?? 'TN'} />
           <View style={styles.divider} />
-          <CityPicker label="Arrivée" value={destination} dotColor={colors.primary} onSelect={setDestination} />
+          <CityPicker label="Arrivée" value={destination} dotColor={colors.primary} onSelect={setDestination} country={user?.country ?? 'TN'} />
         </Card>
 
         {/* Quand */}
@@ -176,12 +176,12 @@ export default function CreateTripScreen() {
                 keyboardType="number-pad"
                 style={styles.priceInput}
               />
-              <Text variant="subtitle" color={colors.textSecondary}>DT</Text>
+              <Text variant="subtitle" color={colors.textSecondary}>{(user?.country ?? 'TN') === 'MA' ? 'DH' : 'DT'}</Text>
             </View>
           </View>
         </Card>
 
-        <LegalBanner compact />
+        <LegalBanner compact country={user?.country ?? 'TN'} />
 
         <Button
           label="Publier le trajet"

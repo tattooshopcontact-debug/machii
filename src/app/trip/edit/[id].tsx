@@ -196,7 +196,7 @@ export default function EditTripScreen() {
             </View>
           </Card>
 
-          <LegalBanner compact />
+          <LegalBanner compact country={user?.country ?? 'TN'} />
 
           <Button
             label="Enregistrer les modifications"
