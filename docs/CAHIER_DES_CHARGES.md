@@ -65,10 +65,10 @@
 5. **#12-A** : saisie véhicule conducteur (marque/couleur/plaque/photo) + révélation après acceptation
 
 ### Bloc B — Cap Maroc (validé, en parallèle)
-6. M1 reste : sélecteur +216/+212 à l'inscription, devise DT/DH dynamique
-7. M2 : cloisonnement pays partout (accueil, demandes)
-8. M3 : interface publique marocaine (villes populaires, textes, cadre légal MA)
-9. Mode femmes interurbain + badge Vérifié proéminent (différenciation lancement MA)
+6. ~~M1 : sélecteur +216/+212 + devise DT/DH~~ ✅ FAIT (commit 50151e7)
+7. ~~M2 : cloisonnement pays partout~~ ✅ FAIT (commit 50151e7)
+8. ~~M3a : villes populaires + textes + cadre légal MA~~ ✅ FAIT (commit 50151e7)
+9. ~~Mode femmes interurbain~~ ✅ FAIT (commit f8ed357, migration 0019) · badge Vérifié proéminent ⏸️
 10. M4 : wallet conducteur + commission par pays (préparé, désactivé)
 11. M5 : CGU Maroc + checklist CNDP
 
