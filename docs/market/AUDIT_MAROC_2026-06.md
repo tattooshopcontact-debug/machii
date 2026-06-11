@@ -198,3 +198,33 @@ Le Maroc offre à Machii un marché **3× plus grand**, **mieux équipé en paie
 Le coût d'entrée est faible : ~2 semaines de dev + un dossier CNDP. Le pire scénario est un échec d'acquisition à coût marginal ; le meilleur est une position de challenger sécurisé sur un marché que BlaBlaCar a ignoré, avec la Coupe du Monde 2030 en ligne de mire.
 
 **Recommandation : GO en phase 0+1 immédiatement, jalons de décision aux mois 2 et 6.**
+
+---
+
+## 8. Annexe — Intégrations de paiement détaillées (deep-dive)
+
+> Rapport complet sourcé : `.research/20260611-machii-maroc-audit/child_outputs/E_integrations_paiement.md` (22 recherches ciblées sur les docs officielles NAPS, PayZone, CMI, Cash Plus).
+
+### Grille comparative PSP Maroc (trajet 100 DH, commission app 10 DH)
+
+| PSP | Setup | Commission | Mensuel | Délai onboarding | Marge nette/10 DH |
+|---|---|---|---|---|---|
+| CMI (via banque) | 500–1 500 MAD + caution possible 5–15 kDH | 1,5–2,5 % + 1,50 DH/tx | 0–200 MAD | 2–6 semaines | 6,00–7,00 DH |
+| **PayZone** | **0 DH** | 2,0–3,5 % sans fixe | 300–800 MAD | ~2 sem (parfois 48-72 h) | **6,50–8,00 DH** |
+| NAPS e-Go | devis | 3 % | 6 900 DH/an | 24–48 h après dossier | 7,00 DH |
+| PayTabs Maroc | devis | ~2,5–3 % (estim.) | devis | — | ~7,00–7,50 DH |
+| **Modèle cash + wallet conducteur** (= Pip Pip Yalah) | ~0 | PSP uniquement sur recharge wallet | — | — | **≈9,70 DH** |
+
+### Les 6 enseignements clés
+
+1. **Aucun PSP marocain ne publie de SDK mobile natif** → intégration React Native = API server-to-server + WebView (pratique standard, y compris Glovo Maroc via PayZone).
+2. **PayZone = seul portail développeur public** (developers.payzone.ma, API REST + Payment Page, HTTP Basic). Le plus startup-friendly.
+3. **NAPS** : tokenisation, refund, récurrent, 3DS frictionless, onboarding 24-48 h — mais doc remise après signature uniquement.
+4. **Le payout (reverser aux conducteurs) est LE goulot** : aucune API self-service publique. Options : Cash Plus Dispatch (6 000 agences, devis), virements de masse bancaires par fichier (AWB instantané 17,60 DH HT/virement — à batcher), inwi money en partenariat (précédent : inDrive).
+5. **Encaisser pour le compte des conducteurs = activité régulée** (loi 103-12, circulaire 2/W/2024 BAM, agrément établissement de paiement). Solution : le modèle Pip Pip Yalah — le passager paie le conducteur en direct (cash), la plateforme ne touche que sa commission via le wallet conducteur. Zéro agrément requis, marge ~97 %.
+6. **Pas de Stripe Connect équivalent au Maroc** (Stripe/Lemonway absents, PayTabs et Chari Pay à surveiller). Le split payment se code dans le backend.
+
+### Architecture paiement recommandée pour Machii Maroc
+
+- **Phase 1** : cash passager→conducteur + wallet conducteur débité de la commission. Recharge wallet par carte via PayZone (WebView). Marge ~9,7 DH sur 10. Zéro contrainte réglementaire.
+- **Phase 2** : encaissement in-app optionnel (PayZone/CMI) + reversement hebdo par virement de masse ou Cash Plus Dispatch (devis + validation conseil juridique loi 103-12).
