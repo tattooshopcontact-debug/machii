@@ -4,10 +4,12 @@ import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from 'react-nat
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconCar, IconClock, IconLock, IconStar } from '@/components/icons';
+import { TripMap } from '@/components/TripMap';
 import { Avatar, Badge, Button, Card, LegalBanner, RoutePoints, Screen, Text } from '@/components/ui';
 import { useCreateBooking } from '@/lib/bookings';
 import { describeError } from '@/lib/errors';
 import { formatDay, formatPrice, formatTime } from '@/lib/format';
+import { useLivePosition, useShareLivePosition } from '@/lib/liveTracking';
 import { useTrip } from '@/lib/trips';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, fontSize, radius, spacing } from '@/theme';
@@ -23,6 +25,13 @@ export default function TripDetailScreen() {
 
   const isOwnTrip = !!user && !!trip && trip.driver.id === user.id;
   const canRequest = !!user && !!trip && !isOwnTrip && trip.seatsAvailable > 0;
+
+  // Temps réel (décision #11) : le conducteur partage, les passagers acceptés voient.
+  const share = useShareLivePosition(isOwnTrip ? trip?.id : undefined, user?.id);
+  const livePosition = useLivePosition(
+    !isOwnTrip ? trip?.id : undefined,
+    !isOwnTrip ? trip?.driver.id : undefined,
+  );
 
   function onRequest() {
     if (!trip || !user) return;
@@ -95,6 +104,41 @@ export default function TripDetailScreen() {
               {trip.driver.isVerified && <Badge label="Vérifié" tone="verified" icon="✓" />}
             </Card>
 
+            <TripMap
+              originLabel={trip.origin}
+              destinationLabel={trip.destination}
+              livePosition={livePosition}
+            />
+
+            {livePosition && (
+              <Card style={styles.liveBanner}>
+                <View style={styles.liveDot} />
+                <Text variant="caption" color={colors.textSecondary} style={{ flex: 1 }}>
+                  {trip.driver.fullName} partage sa position en direct
+                </Text>
+              </Card>
+            )}
+
+            {isOwnTrip && (
+              <Button
+                label={share.sharing ? 'Arrêter le partage de position' : 'Partager ma position en direct'}
+                variant={share.sharing ? 'outline' : 'secondary'}
+                left={
+                  <Ionicons
+                    name={share.sharing ? 'location' : 'location-outline'}
+                    size={18}
+                    color={share.sharing ? colors.primary : colors.textOnPrimary}
+                  />
+                }
+                onPress={() => (share.sharing ? share.stop() : share.start())}
+              />
+            )}
+            {share.error && (
+              <Text variant="caption" color={colors.danger} center>
+                {share.error}
+              </Text>
+            )}
+
             <Card style={{ gap: spacing.lg }}>
               <RoutePoints origin={trip.origin} destination={trip.destination} via={trip.via} />
               <View style={styles.infoRow}>
@@ -159,6 +203,19 @@ export default function TripDetailScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl },
+  liveBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    backgroundColor: 'rgba(40,167,69,0.08)',
+  },
+  liveDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.success,
+  },
   header: {
     backgroundColor: colors.primary,
     flexDirection: 'row',

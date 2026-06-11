@@ -1,0 +1,113 @@
+/**
+ * TripMap — carte du trajet (départ → arrivée).
+ *
+ * Décision cadrage #10 (map) + préparation #11 (partage temps réel).
+ * Les coordonnées sont résolues côté client depuis les labels de villes
+ * (constants/cities.ts) — pas besoin d'exposer les colonnes PostGIS.
+ *
+ * Le prop `livePosition` est prévu pour l'étape temps réel : quand il est
+ * fourni, un marqueur voiture suit la position du conducteur.
+ */
+import { StyleSheet, View } from 'react-native';
+import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from 'react-native-maps';
+
+import { Text } from '@/components/ui';
+import { findCity } from '@/lib/geo';
+import { colors, radius } from '@/theme';
+
+type LatLng = { latitude: number; longitude: number };
+
+type TripMapProps = {
+  originLabel: string;
+  destinationLabel: string;
+  /** Position temps réel du conducteur (étape MAP-2). */
+  livePosition?: LatLng | null;
+  height?: number;
+};
+
+export function TripMap({ originLabel, destinationLabel, livePosition, height = 180 }: TripMapProps) {
+  const origin = findCity(originLabel);
+  const destination = findCity(destinationLabel);
+
+  // Ville inconnue → pas de carte plutôt qu'une carte fausse.
+  if (!origin || !destination) {
+    return null;
+  }
+
+  const o: LatLng = { latitude: origin.lat, longitude: origin.lng };
+  const d: LatLng = { latitude: destination.lat, longitude: destination.lng };
+
+  // Region englobante avec marge.
+  const midLat = (o.latitude + d.latitude) / 2;
+  const midLng = (o.longitude + d.longitude) / 2;
+  const latDelta = Math.max(Math.abs(o.latitude - d.latitude) * 1.6, 0.5);
+  const lngDelta = Math.max(Math.abs(o.longitude - d.longitude) * 1.6, 0.5);
+
+  return (
+    <View style={[styles.wrap, { height }]}>
+      <MapView
+        provider={PROVIDER_DEFAULT}
+        style={StyleSheet.absoluteFill}
+        initialRegion={{
+          latitude: midLat,
+          longitude: midLng,
+          latitudeDelta: latDelta,
+          longitudeDelta: lngDelta,
+        }}
+        scrollEnabled={false}
+        zoomEnabled={false}
+        rotateEnabled={false}
+        pitchEnabled={false}
+        toolbarEnabled={false}
+        liteMode
+      >
+        <Polyline
+          coordinates={[o, d]}
+          geodesic
+          strokeColor={colors.primary}
+          strokeWidth={3}
+          lineDashPattern={[8, 6]}
+        />
+        <Marker coordinate={o} anchor={{ x: 0.5, y: 0.5 }}>
+          <View style={[styles.dot, { backgroundColor: colors.accentSecondary }]} />
+        </Marker>
+        <Marker coordinate={d} anchor={{ x: 0.5, y: 0.5 }}>
+          <View style={[styles.dot, { backgroundColor: colors.primary }]} />
+        </Marker>
+        {livePosition && (
+          <Marker coordinate={livePosition} anchor={{ x: 0.5, y: 0.5 }}>
+            <View style={styles.liveWrap}>
+              <Text style={styles.liveCar}>🚗</Text>
+            </View>
+          </Marker>
+        )}
+      </MapView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  wrap: {
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  dot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    elevation: 2,
+  },
+  liveWrap: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
+    elevation: 3,
+  },
+  liveCar: { fontSize: 16 },
+});
