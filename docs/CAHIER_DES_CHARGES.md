@@ -136,3 +136,15 @@
 - [ ] Réserver domaines machii.com / machii.tn / machii.app
 - [ ] Marques INNORPI Tunisie + EUIPO classes 9, 39, 42
 - [ ] Vectorisation pro du logo (Figma/Illustrator) — le rendu actuel est une référence, pas un vectoriel finalisé
+
+---
+
+## ANNEXE 2 — Nuances retrouvées dans le vault Obsidian (vérification approfondie 2026-06-12)
+
+> Sources : `D:\mon-vault\memory\decisions.md` (journal des décisions) + `FAWEZ.md` (tableau de bord). Confirment le cadrage Notion avec 3 précisions :
+
+1. **KYC différencié par rôle (décision #7-bis, version précise)** : conducteurs = CIN + permis + carte grise + photo véhicule. **Passagers = CIN SEUL.** L'app actuelle ne différencie pas — à corriger quand on fera le gating de publication.
+2. **Négociation libre (#6-bis, sens du flux)** : c'est le **PASSAGER qui propose** un prix → le conducteur accepte / contre-propose / offre gratuit. (Ou prix fixe classique BlaBlaCar.) À respecter quand on codera la négociation.
+3. **Suggestions intelligentes (#10)** : les suggestions waypoint doivent arriver en **notifications non bloquantes** (ramener l'utilisateur dans l'app, pas l'interrompre).
+
+Pré-requis business du cadrage (rappel vault) toujours ouverts : INNORPI classes 9/39/42 + domaines machii.com/.tn/.app. La condition "pas avant le lancement d'un des 4 projets actifs" est caduque (Machii est parti en premier, assumé).
