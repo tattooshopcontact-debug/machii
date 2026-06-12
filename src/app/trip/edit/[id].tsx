@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CityPicker } from '@/components/CityPicker';
 import { Button, Card, LegalBanner, Screen, Text } from '@/components/ui';
+import { findCountry } from '@/constants/cities';
 import { describeError } from '@/lib/errors';
 import { useDeleteTrip, useTrip, useUpdateTrip } from '@/lib/trips';
 import { useAuthStore } from '@/stores/authStore';
@@ -48,6 +49,10 @@ export default function EditTripScreen() {
 
   const isOwner = !!user && !!trip && trip.driver.id === user.id;
   const validForm = !!origin && !!destination && origin !== destination;
+  // Devise + villes + cadre légal suivent le PAYS DU TRAJET (pas celui du user) :
+  // un trajet marocain s'édite en DH avec les villes MA, même chose pour la TN.
+  const tripCountry = trip?.country ?? 'TN';
+  const currency = findCountry(tripCountry).currency;
 
   async function onSave() {
     if (!trip || !validForm) return;
@@ -138,6 +143,7 @@ export default function EditTripScreen() {
               value={origin}
               dotColor={colors.accentSecondary}
               onSelect={setOrigin}
+              country={tripCountry}
             />
             <View style={styles.divider} />
             <CityPicker
@@ -145,6 +151,7 @@ export default function EditTripScreen() {
               value={destination}
               dotColor={colors.primary}
               onSelect={setDestination}
+              country={tripCountry}
             />
           </Card>
 
@@ -191,12 +198,12 @@ export default function EditTripScreen() {
                   keyboardType="number-pad"
                   style={styles.priceInput}
                 />
-                <Text variant="subtitle" color={colors.textSecondary}>DT</Text>
+                <Text variant="subtitle" color={colors.textSecondary}>{currency}</Text>
               </View>
             </View>
           </Card>
 
-          <LegalBanner compact country={user?.country ?? 'TN'} />
+          <LegalBanner compact country={tripCountry} />
 
           <Button
             label="Enregistrer les modifications"
