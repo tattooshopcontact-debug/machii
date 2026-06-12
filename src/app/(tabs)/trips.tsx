@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { TripCard } from '@/components/TripCard';
 import { Avatar, Badge, Button, Card, Screen, ScreenHeader, Text } from '@/components/ui';
 import {
+  useConfirmPickup,
   useMyIncomingBookings,
   useMyOutgoingBookings,
   useUpdateBookingStatus,
@@ -302,6 +303,32 @@ function BookingCard({
   const phoneVisible = booking.status === 'accepted';
   const phone = otherParty?.phone ?? null;
 
+  const confirmPickup = useConfirmPickup();
+  const [codeEntry, setCodeEntry] = useState('');
+  const [showCodeInput, setShowCodeInput] = useState(false);
+
+  const isAccepted = booking.status === 'accepted';
+  const pickedUp = !!booking.picked_up_at;
+
+  function submitCode() {
+    const code = codeEntry.replace(/\D/g, '');
+    if (code.length !== 4) {
+      Alert.alert('Code à 4 chiffres', 'Saisis les 4 chiffres affichés sur le téléphone du passager.');
+      return;
+    }
+    confirmPickup.mutate(
+      { bookingId: booking.id, code },
+      {
+        onSuccess: () => {
+          setShowCodeInput(false);
+          setCodeEntry('');
+          Alert.alert('Prise en charge confirmée', `${otherParty?.full_name ?? 'Le passager'} est à bord. Bon trajet !`);
+        },
+        onError: (e) => Alert.alert('Code incorrect', describeError(e)),
+      },
+    );
+  }
+
   return (
     <Card style={{ gap: spacing.sm }}>
       <View style={styles.bookingHeader}>
@@ -337,6 +364,56 @@ function BookingCard({
           <Button variant="secondary" label="Refuser" onPress={() => onRefuse?.(booking)} style={{ flex: 1 }} />
           <Button label="Accepter" onPress={() => onAccept?.(booking)} style={{ flex: 1 }} />
         </View>
+      )}
+
+      {/* #12-B — Prise en charge confirmée (les deux côtés). */}
+      {isAccepted && pickedUp && (
+        <View style={styles.pickedUpRow}>
+          <Ionicons name="checkmark-circle" size={18} color={colors.success} />
+          <Text variant="label" color={colors.success}>Prise en charge confirmée</Text>
+        </View>
+      )}
+
+      {/* #12-B — Côté PASSAGER : son code à montrer au conducteur. */}
+      {variant === 'outgoing' && isAccepted && !pickedUp && booking.confirm_code && (
+        <View style={styles.codeBox}>
+          <Text variant="caption" color={colors.textSecondary}>TON CODE DE PRISE EN CHARGE</Text>
+          <Text style={styles.codeDigits}>
+            {booking.confirm_code.split('').join('  ')}
+          </Text>
+          <Text variant="caption" color={colors.textSecondary} center>
+            Donne ce code au conducteur à la montée. Il le saisit pour confirmer.
+          </Text>
+        </View>
+      )}
+
+      {/* #12-B — Côté CONDUCTEUR : saisie du code du passager. */}
+      {variant === 'incoming' && isAccepted && !pickedUp && (
+        showCodeInput ? (
+          <View style={{ gap: spacing.sm }}>
+            <TextInput
+              value={codeEntry}
+              onChangeText={(v) => setCodeEntry(v.replace(/\D/g, '').slice(0, 4))}
+              keyboardType="number-pad"
+              placeholder="• • • •"
+              placeholderTextColor={colors.textMuted}
+              maxLength={4}
+              autoFocus
+              style={styles.codeInput}
+            />
+            <View style={styles.actions}>
+              <Button variant="secondary" label="Annuler" onPress={() => { setShowCodeInput(false); setCodeEntry(''); }} style={{ flex: 1 }} />
+              <Button label="Valider" onPress={submitCode} loading={confirmPickup.isPending} style={{ flex: 1 }} />
+            </View>
+          </View>
+        ) : (
+          <Button
+            variant="secondary"
+            label="Confirmer la prise en charge"
+            onPress={() => setShowCodeInput(true)}
+            left={<Ionicons name="qr-code-outline" size={18} color={colors.textOnPrimary} />}
+          />
+        )
       )}
 
       {variant === 'outgoing' && trip && (
@@ -414,6 +491,41 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   actions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
+  pickedUpRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.surfaceAlt,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+  },
+  codeBox: {
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.accent,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+  },
+  codeDigits: {
+    fontSize: 40,
+    fontWeight: '800',
+    letterSpacing: 4,
+    color: colors.primary,
+  },
+  codeInput: {
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: spacing.md,
+    textAlign: 'center',
+    fontSize: fontSize.xxl,
+    letterSpacing: 10,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
   detailLink: {
     flexDirection: 'row',
     alignItems: 'center',

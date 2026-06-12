@@ -26,7 +26,7 @@
 | 11-B | **Partage de trajet temps réel — opt-in par le PASSAGER, 1 tap, lien web partageable 4h** | ✅ | **Complet (2026-06-12)** : (a) conducteur → passagers acceptés (Realtime in-app), (b) **bouton "Partager mon trajet à un proche"** pour tout participant → lien web `share.html?t=<token>` consultable SANS compte, position live (Leaflet/OSM, refresh 15 s), expiration 4 h, révocable. Migration 0017 + RPC `get_shared_trip`. |
 | 11-C | **Confirmation d'arrivée symétrique + alerte fallback 30 min aux contacts d'urgence** | ⏸️ | Rien. Dépend de 12-B (codes) pour détecter le départ. |
 | 12-A | Affichage échelonné des infos (plaque + photo véhicule APRÈS acceptation) | 🟡 | Le placeholder "Véhicule communiqué après acceptation" existe sur le détail trajet, mais **pas de saisie véhicule** (marque/couleur/plaque/photo) ni de révélation post-acceptation. Table `vehicles` existe en DB, pas branchée. |
-| 12-B | **Code 4 chiffres SYMÉTRIQUE à la prise en charge** (passager montre son code, conducteur saisit, et réciproquement ; expiration 30 min) | ⏸️ | La colonne `bookings.confirm_code` existe depuis 0001, jamais utilisée. **Prochaine étape en cours.** |
+| 12-B | **Code 4 chiffres SYMÉTRIQUE à la prise en charge** (passager montre son code, conducteur saisit, et réciproquement ; expiration 30 min) | 🟡 | **Cœur fait (2026-06-12, migration 0021)** : code généré auto à l'acceptation (trigger), affiché en GRAND côté passager, saisi côté conducteur (RPC `confirm_pickup` SECURITY DEFINER, vérif conducteur + `is distinct from` anti-NULL, testée serveur). `picked_up_at` horodaté. RESTE : expiration 30 min, masquer le code au conducteur (lecture via RPC dédiée — aujourd'hui `select *` le laisse lisible), confirmation réciproque arrivée (→ #11-C). |
 | 13-A | Aucun paiement in-app Phase 1, cash direct | ✅ | Conforme. (Phase Maroc : wallet conducteur préparé plus tard, cf. audit.) |
 | 13-B/C/D | **No-show : -1 étoile auto via les codes non saisis à +60 min, symétrique, ban à 3 récidives, contestation par signalement** | ⏸️ | Dépend de 12-B. Rien codé. |
 | 14 | Nom Machii (secours Ploov) | ✅ | |
@@ -59,7 +59,7 @@
 
 ### Bloc A — Compléter le cadrage sécurité (en cours)
 1. ~~**#11-B complet**~~ ✅ FAIT 2026-06-12 (lien web 4h + position live sans compte)
-2. **#12-B** : codes 4 chiffres symétriques à la prise en charge (UI grand code + saisie, expiration 30 min)
+2. ~~**#12-B** : codes 4 chiffres à la prise en charge (UI grand code + saisie)~~ 🟡 FAIT 2026-06-12 (migration 0021). Reste : expiration 30 min + masquer le code au conducteur.
 3. **#11-C** : confirmation d'arrivée symétrique + alerte fallback 30 min aux contacts d'urgence
 4. **#13-B/C/D** : no-show automatique via les codes (+60 min), -1 étoile, ban à 3, contestation
 5. **#12-A** : saisie véhicule conducteur (marque/couleur/plaque/photo) + révélation après acceptation

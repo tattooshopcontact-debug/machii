@@ -106,3 +106,37 @@ export function useUpdateBookingStatus() {
     },
   });
 }
+
+/**
+ * Conducteur : confirme la prise en charge d'un passager en saisissant son code
+ * à 4 chiffres (#12-B). La RPC vérifie côté serveur que l'appelant est bien le
+ * conducteur du trajet et que le code correspond.
+ */
+async function confirmPickup(bookingId: string, code: string): Promise<void> {
+  const { data, error } = await supabase.rpc('confirm_pickup', {
+    p_booking_id: bookingId,
+    p_code: code,
+  });
+  if (error) throw error;
+  const res = data as { ok: boolean; reason?: string } | null;
+  if (!res?.ok) {
+    const reasons: Record<string, string> = {
+      not_found: 'Réservation introuvable.',
+      not_driver: "Seul le conducteur du trajet peut confirmer.",
+      not_accepted: "Cette réservation n'est pas acceptée.",
+      bad_code: 'Code incorrect. Vérifie les 4 chiffres avec ton passager.',
+    };
+    throw new Error(reasons[res?.reason ?? ''] ?? 'Confirmation impossible.');
+  }
+}
+
+export function useConfirmPickup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ bookingId, code }: { bookingId: string; code: string }) =>
+      confirmPickup(bookingId, code),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['bookings'] });
+    },
+  });
+}

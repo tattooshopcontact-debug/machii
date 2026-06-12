@@ -106,6 +106,7 @@ export type Database = {
           seats_booked: number;
           status: BookingStatus;
           confirm_code: string | null;
+          picked_up_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -117,6 +118,7 @@ export type Database = {
           seats_booked?: number;
           status?: BookingStatus;
           confirm_code?: string | null;
+          picked_up_at?: string | null;
         };
         Update: Partial<Database['public']['Tables']['bookings']['Insert']>;
         Relationships: [];
@@ -361,6 +363,10 @@ export type Database = {
       get_my_phone: {
         Args: Record<string, never>;
         Returns: string | null;
+      };
+      confirm_pickup: {
+        Args: { p_booking_id: string; p_code: string };
+        Returns: { ok: boolean; reason?: string };
       };
       delete_my_account: {
         Args: Record<string, never>;
