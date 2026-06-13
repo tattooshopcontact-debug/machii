@@ -140,3 +140,33 @@ export function useConfirmPickup() {
     },
   });
 }
+
+/**
+ * Passager OU conducteur : confirme l'arrivée à destination (#11-C). Termine la
+ * réservation et horodate `arrived_at`. Côté passager, c'est le signal "je suis
+ * bien arrivé(e)" qui désamorce l'alerte fallback (à venir).
+ */
+async function confirmArrival(bookingId: string): Promise<void> {
+  const { data, error } = await supabase.rpc('confirm_arrival', { p_booking_id: bookingId });
+  if (error) throw error;
+  const res = data as { ok: boolean; reason?: string } | null;
+  if (!res?.ok) {
+    const reasons: Record<string, string> = {
+      not_found: 'Réservation introuvable.',
+      not_participant: "Tu n'es pas un participant de ce trajet.",
+      not_accepted: "Cette réservation n'est pas active.",
+      not_picked_up: "La prise en charge n'a pas encore été confirmée.",
+    };
+    throw new Error(reasons[res?.reason ?? ''] ?? "Confirmation d'arrivée impossible.");
+  }
+}
+
+export function useConfirmArrival() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ bookingId }: { bookingId: string }) => confirmArrival(bookingId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['bookings'] });
+    },
+  });
+}

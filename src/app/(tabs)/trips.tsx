@@ -6,6 +6,7 @@ import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, TextInput, Vi
 import { TripCard } from '@/components/TripCard';
 import { Avatar, Badge, Button, Card, Screen, ScreenHeader, Text } from '@/components/ui';
 import {
+  useConfirmArrival,
   useConfirmPickup,
   useMyIncomingBookings,
   useMyOutgoingBookings,
@@ -304,11 +305,23 @@ function BookingCard({
   const phone = otherParty?.phone ?? null;
 
   const confirmPickup = useConfirmPickup();
+  const confirmArrival = useConfirmArrival();
   const [codeEntry, setCodeEntry] = useState('');
   const [showCodeInput, setShowCodeInput] = useState(false);
 
   const isAccepted = booking.status === 'accepted';
   const pickedUp = !!booking.picked_up_at;
+  const arrived = !!booking.arrived_at || booking.status === 'completed';
+
+  function onConfirmArrival() {
+    confirmArrival.mutate(
+      { bookingId: booking.id },
+      {
+        onSuccess: () => Alert.alert('Arrivée confirmée', 'Trajet terminé. Pense à laisser une note !'),
+        onError: (e) => Alert.alert('Erreur', describeError(e)),
+      },
+    );
+  }
 
   function submitCode() {
     const code = codeEntry.replace(/\D/g, '');
@@ -366,11 +379,28 @@ function BookingCard({
         </View>
       )}
 
-      {/* #12-B — Prise en charge confirmée (les deux côtés). */}
-      {isAccepted && pickedUp && (
+      {/* #11-C — Trajet terminé (arrivée confirmée). */}
+      {arrived && (
         <View style={styles.pickedUpRow}>
-          <Ionicons name="checkmark-circle" size={18} color={colors.success} />
-          <Text variant="label" color={colors.success}>Prise en charge confirmée</Text>
+          <Ionicons name="checkmark-done-circle" size={18} color={colors.success} />
+          <Text variant="label" color={colors.success}>Trajet terminé</Text>
+        </View>
+      )}
+
+      {/* #12-B + #11-C — Pris en charge, en route : confirmer l'arrivée (les deux côtés). */}
+      {isAccepted && pickedUp && !arrived && (
+        <View style={{ gap: spacing.sm }}>
+          <View style={styles.pickedUpRow}>
+            <Ionicons name="checkmark-circle" size={18} color={colors.success} />
+            <Text variant="label" color={colors.success}>Prise en charge confirmée · en route</Text>
+          </View>
+          <Button
+            label="Confirmer l'arrivée"
+            variant="secondary"
+            onPress={onConfirmArrival}
+            loading={confirmArrival.isPending}
+            left={<Ionicons name="flag-outline" size={18} color={colors.textOnPrimary} />}
+          />
         </View>
       )}
 
