@@ -18,6 +18,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut } = useAuthStore();
   const vehicleEnabled = useFeature('vehicle_info');
+  const progressionEnabled = useFeature('progression');
 
   if (!user) {
     return (
@@ -93,6 +94,15 @@ export default function ProfileScreen() {
             variant="secondary"
             left={<Ionicons name="shield-checkmark-outline" size={18} color={colors.textOnPrimary} />}
             onPress={() => router.push('/profile/verify')}
+          />
+        )}
+
+        {progressionEnabled && (
+          <Button
+            label="Ma progression"
+            variant="secondary"
+            left={<Ionicons name="trophy-outline" size={18} color={colors.textOnPrimary} />}
+            onPress={() => router.push('/profile/progression' as never)}
           />
         )}
 

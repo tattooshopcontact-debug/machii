@@ -32,7 +32,7 @@
 | 14 | Nom Machii (secours Ploov) | ✅ | |
 | 15 | Onboarding : soft launch fermé inclusif + badge Founding Member (100 premiers) | 🟡 | Test interne Play Store = le soft launch fermé ✅. Badge Founding Member ⏸️ (lié à #17). |
 | 16 | Cadre légal TN : positionnement + **disclaimer permanent** | 🟡 | Bandeau "covoiturage gratuit loi 2004-33" présent sur create + profil ✅. Vérifier conformité complète du wording vs cadrage (CGU détaillées ⏸️). |
-| 17 | **Gamification : XP + 5 niveaux/thèmes débloquables + 8 achievements** | 🟡 | XP/level en DB ✅ + 8 avatars débloquables ✅ + **attribution AUTO de l'XP ✅ (2026-06-12, migration 0026 : +10/trajet terminé, +5/note ; niveau recalculé L1-L5 sur paliers 100/300/600/1000 ; testée serveur)**. MANQUE : +20 parrainage (avec la feature parrainage), thèmes visuels complets (5 palettes), achievements événementiels (Ramadan/Aïd/Founding Member…), écran progression. |
+| 17 | **Gamification : XP + 5 niveaux/thèmes débloquables + 8 achievements** | 🟡 | XP/level en DB ✅ + 8 avatars débloquables ✅ + **attribution AUTO de l'XP ✅ (2026-06-12, migration 0026 : +10/trajet terminé, +5/note ; niveau recalculé L1-L5 sur paliers 100/300/600/1000 ; testée serveur)**. + **écran "Ma progression" ✅ (2026-06-12, option F8) : niveau + barre XP vers niveau suivant + 5 thèmes débloquables (affichage statut locked/unlocked, cf src/constants/themes.ts)**. MANQUE : +20 parrainage, application visuelle des thèmes (repeindre l'app), achievements événementiels (Ramadan/Aïd/Founding Member…). |
 | 18 | **Trajets répétitifs** (annonce mère + occurrences, désactivation ponctuelle, rappels veille) | 🟡 | Le flag `is_recurring` + toggle "Répétitif" existent à la création, mais **pas de mécanique mère/occurrences**, pas de choix des jours, pas de rappels. À faire. |
 | 19 | Fork motis-project | ❌ | Caduc : app développée from scratch en Expo (plus rapide au final). |
 
@@ -68,6 +68,7 @@
 | F5 | Code de prise en charge 4 chiffres | `pickup_code` | v1.2.0 | 🔴 OFF (à publier) |
 | F6 | Confirmation d'arrivée | `arrival_confirm` | v1.2.0 | 🔴 OFF (à publier) |
 | F7 | Véhicule + affichage échelonné (plaque après accept.) | `vehicle_info` | v1.2.0 | 🔴 OFF (à publier) |
+| F8 | Écran progression (XP, niveau, thèmes) | `progression` | v1.2.0 | 🔴 OFF (à publier) |
 
 **Pour publier une option** (effet immédiat) : `select public.set_feature('pickup_code', true);` dans le SQL editor Supabase (ou via script `pg`). Pour dépublier : `false`.
 **Côté app** : `useFeature('<key>')` (src/lib/featureFlags.ts) — fallback sûr si flags non chargés. ⚠️ La prise en compte d'une NOUVELLE option gardée par flag nécessite que son code soit déjà dans le build installé ; F5/F6 ne seront visibles qu'après le prochain build (quota EAS → 1er juillet).
