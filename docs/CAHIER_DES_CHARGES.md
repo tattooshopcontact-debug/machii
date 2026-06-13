@@ -55,6 +55,24 @@
 
 ---
 
+## 🎛️ Registre des options & publication progressive (feature flags)
+
+> Stratégie Faouez : **tout le code part dans le build, mais on publie option par option** (pas tout d'un coup). Chaque option est numérotée + versionnée et gardée derrière un **feature flag** (table `feature_flags`, migration 0023). Publier = `select set_feature('<key>', true)` côté Supabase → effet immédiat, **zéro rebuild**.
+
+| # | Option | Clé flag | Version | État publication |
+|---|---|---|---|---|
+| F1 | Cap Maroc (+212, villes, devise DH) | `maroc` | v1.1.0 | 🟢 ON |
+| F2 | Mode trajet entre femmes | `women_only` | v1.1.0 | 🟢 ON |
+| F3 | Partage de trajet temps réel à un proche | `live_share` | v1.1.0 | 🟢 ON |
+| F4 | Carte du trajet | `trip_map` | v1.1.0 | 🟢 ON |
+| F5 | Code de prise en charge 4 chiffres | `pickup_code` | v1.2.0 | 🔴 OFF (à publier) |
+| F6 | Confirmation d'arrivée | `arrival_confirm` | v1.2.0 | 🔴 OFF (à publier) |
+
+**Pour publier une option** (effet immédiat) : `select public.set_feature('pickup_code', true);` dans le SQL editor Supabase (ou via script `pg`). Pour dépublier : `false`.
+**Côté app** : `useFeature('<key>')` (src/lib/featureFlags.ts) — fallback sûr si flags non chargés. ⚠️ La prise en compte d'une NOUVELLE option gardée par flag nécessite que son code soit déjà dans le build installé ; F5/F6 ne seront visibles qu'après le prochain build (quota EAS → 1er juillet).
+
+---
+
 ## ROADMAP consolidée (ordre validé par Faouez 2026-06-12)
 
 ### Bloc A — Compléter le cadrage sécurité (en cours)

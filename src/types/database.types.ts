@@ -125,6 +125,26 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['bookings']['Insert']>;
         Relationships: [];
       };
+      feature_flags: {
+        Row: {
+          key: string;
+          num: number;
+          label: string;
+          version: string;
+          enabled: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          key: string;
+          num: number;
+          label: string;
+          version: string;
+          enabled?: boolean;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['feature_flags']['Insert']>;
+        Relationships: [];
+      };
       trip_share_links: {
         Row: {
           id: string;

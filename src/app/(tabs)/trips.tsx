@@ -14,6 +14,7 @@ import {
   type BookingWithRelations,
 } from '@/lib/bookings';
 import { describeError } from '@/lib/errors';
+import { useFeature } from '@/lib/featureFlags';
 import { formatDay, formatTime } from '@/lib/format';
 import { useMyPublishedTrips } from '@/lib/trips';
 import { useAuthStore } from '@/stores/authStore';
@@ -306,6 +307,8 @@ function BookingCard({
 
   const confirmPickup = useConfirmPickup();
   const confirmArrival = useConfirmArrival();
+  const pickupCodeEnabled = useFeature('pickup_code');
+  const arrivalEnabled = useFeature('arrival_confirm');
   const [codeEntry, setCodeEntry] = useState('');
   const [showCodeInput, setShowCodeInput] = useState(false);
 
@@ -394,18 +397,20 @@ function BookingCard({
             <Ionicons name="checkmark-circle" size={18} color={colors.success} />
             <Text variant="label" color={colors.success}>Prise en charge confirmée · en route</Text>
           </View>
-          <Button
-            label="Confirmer l'arrivée"
-            variant="secondary"
-            onPress={onConfirmArrival}
-            loading={confirmArrival.isPending}
-            left={<Ionicons name="flag-outline" size={18} color={colors.textOnPrimary} />}
-          />
+          {arrivalEnabled && (
+            <Button
+              label="Confirmer l'arrivée"
+              variant="secondary"
+              onPress={onConfirmArrival}
+              loading={confirmArrival.isPending}
+              left={<Ionicons name="flag-outline" size={18} color={colors.textOnPrimary} />}
+            />
+          )}
         </View>
       )}
 
       {/* #12-B — Côté PASSAGER : son code à montrer au conducteur. */}
-      {variant === 'outgoing' && isAccepted && !pickedUp && booking.confirm_code && (
+      {pickupCodeEnabled && variant === 'outgoing' && isAccepted && !pickedUp && booking.confirm_code && (
         <View style={styles.codeBox}>
           <Text variant="caption" color={colors.textSecondary}>TON CODE DE PRISE EN CHARGE</Text>
           <Text style={styles.codeDigits}>
@@ -418,7 +423,7 @@ function BookingCard({
       )}
 
       {/* #12-B — Côté CONDUCTEUR : saisie du code du passager. */}
-      {variant === 'incoming' && isAccepted && !pickedUp && (
+      {pickupCodeEnabled && variant === 'incoming' && isAccepted && !pickedUp && (
         showCodeInput ? (
           <View style={{ gap: spacing.sm }}>
             <TextInput
