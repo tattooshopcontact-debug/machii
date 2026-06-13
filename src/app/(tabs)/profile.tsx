@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Avatar, Badge, Button, Card, Screen, ScreenHeader, Text } from '@/components/ui';
+import { useFeature } from '@/lib/featureFlags';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, radius, spacing } from '@/theme';
 import type { Role } from '@/types/models';
@@ -16,6 +17,7 @@ const ROLE_LABEL: Record<Role, string> = {
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut } = useAuthStore();
+  const vehicleEnabled = useFeature('vehicle_info');
 
   if (!user) {
     return (
@@ -91,6 +93,15 @@ export default function ProfileScreen() {
             variant="secondary"
             left={<Ionicons name="shield-checkmark-outline" size={18} color={colors.textOnPrimary} />}
             onPress={() => router.push('/profile/verify')}
+          />
+        )}
+
+        {vehicleEnabled && user.role !== 'passenger' && (
+          <Button
+            label="Mon véhicule"
+            variant="secondary"
+            left={<Ionicons name="car-outline" size={18} color={colors.textOnPrimary} />}
+            onPress={() => router.push('/profile/vehicle' as never)}
           />
         )}
 

@@ -125,6 +125,31 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['bookings']['Insert']>;
         Relationships: [];
       };
+      vehicles: {
+        Row: {
+          id: string;
+          driver_id: string;
+          make: string | null;
+          model: string | null;
+          color: string | null;
+          plate: string | null;
+          seats: number | null;
+          photo_url: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          driver_id: string;
+          make?: string | null;
+          model?: string | null;
+          color?: string | null;
+          plate?: string | null;
+          seats?: number | null;
+          photo_url?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['vehicles']['Insert']>;
+        Relationships: [];
+      };
       feature_flags: {
         Row: {
           key: string;
@@ -393,6 +418,20 @@ export type Database = {
       confirm_arrival: {
         Args: { p_booking_id: string };
         Returns: { ok: boolean; reason?: string };
+      };
+      get_trip_vehicle: {
+        Args: { p_trip_id: string };
+        Returns: {
+          ok: boolean;
+          reason?: string;
+          make?: string | null;
+          model?: string | null;
+          color?: string | null;
+          seats?: number | null;
+          revealed?: boolean;
+          plate?: string | null;
+          photo_url?: string | null;
+        };
       };
       delete_my_account: {
         Args: Record<string, never>;

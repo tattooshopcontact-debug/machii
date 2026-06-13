@@ -8,10 +8,12 @@ import { TripMap } from '@/components/TripMap';
 import { Avatar, Badge, Button, Card, LegalBanner, RoutePoints, Screen, Text } from '@/components/ui';
 import { useCreateBooking } from '@/lib/bookings';
 import { describeError } from '@/lib/errors';
+import { useFeature } from '@/lib/featureFlags';
 import { formatDay, formatPrice, formatTime } from '@/lib/format';
 import { useLivePosition, useShareLivePosition } from '@/lib/liveTracking';
 import { useShareTrip } from '@/lib/tripShare';
 import { useTrip } from '@/lib/trips';
+import { useTripVehicle } from '@/lib/vehicles';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, fontSize, radius, spacing } from '@/theme';
 
@@ -38,6 +40,11 @@ export default function TripDetailScreen() {
 
   // #11-B : partage du trajet à un proche (lien web 4h).
   const shareTrip = useShareTrip();
+
+  // #12-A : véhicule + affichage échelonné (option F7).
+  const vehicleEnabled = useFeature('vehicle_info');
+  const { data: vehicle } = useTripVehicle(vehicleEnabled ? id : undefined);
+  const vehicleShown = vehicleEnabled && vehicle?.ok;
 
   async function onShareToContact() {
     if (!trip || !user) return;
@@ -195,18 +202,45 @@ export default function TripDetailScreen() {
               </View>
             </Card>
 
-            <Card style={styles.locked}>
-              <View style={styles.lockRow}>
-                <IconCar size={22} />
-                <Text variant="bodyMedium" style={{ flex: 1 }}>Véhicule communiqué après acceptation</Text>
-              </View>
-              <View style={styles.lockNotice}>
-                <IconLock size={18} />
-                <Text variant="caption" style={{ flex: 1 }}>
-                  Plaque, photo réelle et numéro de téléphone visibles dès que ta demande sera acceptée.
-                </Text>
-              </View>
-            </Card>
+            {vehicleShown ? (
+              <Card style={styles.locked}>
+                <View style={styles.lockRow}>
+                  <IconCar size={22} />
+                  <Text variant="bodyMedium" style={{ flex: 1 }}>
+                    {[vehicle?.make, vehicle?.model].filter(Boolean).join(' ') || 'Véhicule'}
+                    {vehicle?.color ? ` · ${vehicle.color}` : ''}
+                  </Text>
+                </View>
+                {vehicle?.revealed ? (
+                  <View style={styles.lockNotice}>
+                    <Ionicons name="pricetag-outline" size={18} color={colors.primary} />
+                    <Text variant="bodyMedium" style={{ flex: 1 }}>
+                      Plaque : {vehicle?.plate ?? '—'}
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={styles.lockNotice}>
+                    <IconLock size={18} />
+                    <Text variant="caption" style={{ flex: 1 }}>
+                      Plaque et photo visibles dès que ta demande sera acceptée.
+                    </Text>
+                  </View>
+                )}
+              </Card>
+            ) : (
+              <Card style={styles.locked}>
+                <View style={styles.lockRow}>
+                  <IconCar size={22} />
+                  <Text variant="bodyMedium" style={{ flex: 1 }}>Véhicule communiqué après acceptation</Text>
+                </View>
+                <View style={styles.lockNotice}>
+                  <IconLock size={18} />
+                  <Text variant="caption" style={{ flex: 1 }}>
+                    Plaque, photo réelle et numéro de téléphone visibles dès que ta demande sera acceptée.
+                  </Text>
+                </View>
+              </Card>
+            )}
 
             <Card style={styles.priceCard}>
               <Text variant="body" color={colors.textSecondary}>Participation suggérée</Text>

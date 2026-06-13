@@ -11,6 +11,7 @@ import { Button, Card, LegalBanner, Screen, Text } from '@/components/ui';
 import { describeError } from '@/lib/errors';
 import { cityToPoint, findCity, parseDepartureTime } from '@/lib/geo';
 import { supabase } from '@/lib/supabase';
+import { useMyVehicle } from '@/lib/vehicles';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, fonts, fontSize, radius, spacing } from '@/theme';
 
@@ -20,6 +21,7 @@ export default function CreateTripScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
+  const { data: myVehicle } = useMyVehicle(user?.id);
   const queryClient = useQueryClient();
 
   const [origin, setOrigin] = useState<string | null>(null);
@@ -79,6 +81,8 @@ export default function CreateTripScreen() {
         country: findCity(origin)?.country ?? user.country,
         // M3 : trajet entre femmes (seulement si la conductrice l'active).
         women_only: canOfferWomenOnly && womenOnly,
+        // #12-A : associe le véhicule enregistré du conducteur (s'il existe).
+        vehicle_id: myVehicle?.id ?? null,
       });
       if (error) throw error;
 
