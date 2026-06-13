@@ -32,7 +32,7 @@
 | 14 | Nom Machii (secours Ploov) | ✅ | |
 | 15 | Onboarding : soft launch fermé inclusif + badge Founding Member (100 premiers) | 🟡 | Test interne Play Store = le soft launch fermé ✅. Badge Founding Member ⏸️ (lié à #17). |
 | 16 | Cadre légal TN : positionnement + **disclaimer permanent** | 🟡 | Bandeau "covoiturage gratuit loi 2004-33" présent sur create + profil ✅. Vérifier conformité complète du wording vs cadrage (CGU détaillées ⏸️). |
-| 17 | **Gamification : XP + 5 niveaux/thèmes débloquables + 8 achievements** | 🟡 | XP/level en DB ✅ + **8 avatars débloquables ✅ (2026-06-11, équivalent moderne des "thèmes")**. MANQUE : attribution AUTO de l'XP (+10 trajet, +5 note, +20 parrainage), thèmes visuels complets (5 palettes), achievements événementiels (Ramadan, Aïd, Founding Member…), écran progression. |
+| 17 | **Gamification : XP + 5 niveaux/thèmes débloquables + 8 achievements** | 🟡 | XP/level en DB ✅ + 8 avatars débloquables ✅ + **attribution AUTO de l'XP ✅ (2026-06-12, migration 0026 : +10/trajet terminé, +5/note ; niveau recalculé L1-L5 sur paliers 100/300/600/1000 ; testée serveur)**. MANQUE : +20 parrainage (avec la feature parrainage), thèmes visuels complets (5 palettes), achievements événementiels (Ramadan/Aïd/Founding Member…), écran progression. |
 | 18 | **Trajets répétitifs** (annonce mère + occurrences, désactivation ponctuelle, rappels veille) | 🟡 | Le flag `is_recurring` + toggle "Répétitif" existent à la création, mais **pas de mécanique mère/occurrences**, pas de choix des jours, pas de rappels. À faire. |
 | 19 | Fork motis-project | ❌ | Caduc : app développée from scratch en Expo (plus rapide au final). |
 
