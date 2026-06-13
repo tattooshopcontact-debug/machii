@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconCar, IconClock, IconLock, IconStar } from '@/components/icons';
@@ -212,12 +212,21 @@ export default function TripDetailScreen() {
                   </Text>
                 </View>
                 {vehicle?.revealed ? (
-                  <View style={styles.lockNotice}>
-                    <Ionicons name="pricetag-outline" size={18} color={colors.primary} />
-                    <Text variant="bodyMedium" style={{ flex: 1 }}>
-                      Plaque : {vehicle?.plate ?? '—'}
-                    </Text>
-                  </View>
+                  <>
+                    <View style={styles.lockNotice}>
+                      <Ionicons name="pricetag-outline" size={18} color={colors.primary} />
+                      <Text variant="bodyMedium" style={{ flex: 1 }}>
+                        Plaque : {vehicle?.plate ?? '—'}
+                      </Text>
+                    </View>
+                    {vehicle?.photo_url && (
+                      <Image
+                        source={{ uri: vehicle.photo_url }}
+                        style={styles.vehiclePhoto}
+                        resizeMode="cover"
+                      />
+                    )}
+                  </>
                 ) : (
                   <View style={styles.lockNotice}>
                     <IconLock size={18} />
@@ -304,6 +313,7 @@ const styles = StyleSheet.create({
   infoRow: { flexDirection: 'row', justifyContent: 'space-between' },
   infoItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   locked: { gap: spacing.md },
+  vehiclePhoto: { width: '100%', height: 160, borderRadius: radius.md, backgroundColor: colors.surfaceAlt },
   lockRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   lockNotice: {
     flexDirection: 'row',
