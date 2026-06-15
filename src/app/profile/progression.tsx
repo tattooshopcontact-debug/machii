@@ -60,7 +60,7 @@ export default function ProgressionScreen() {
           <Text variant="label">Comment gagner de l'XP</Text>
           <Row icon="car-sport-outline" text="Trajet terminé" pts="+10" />
           <Row icon="star-outline" text="Note laissée après un trajet" pts="+5" />
-          <Row icon="gift-outline" text="Parrainage (bientôt)" pts="+20" />
+          <Row icon="gift-outline" text="Parrainage d'un ami" pts="+20" />
         </Card>
 
         {/* Thèmes débloquables */}
