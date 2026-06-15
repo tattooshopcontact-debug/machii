@@ -150,6 +150,20 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['vehicles']['Insert']>;
         Relationships: [];
       };
+      user_achievements: {
+        Row: {
+          user_id: string;
+          key: string;
+          unlocked_at: string;
+        };
+        Insert: {
+          user_id: string;
+          key: string;
+          unlocked_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['user_achievements']['Insert']>;
+        Relationships: [];
+      };
       feature_flags: {
         Row: {
           key: string;

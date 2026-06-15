@@ -10,7 +10,9 @@ import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card, Screen, Text } from '@/components/ui';
+import { ACHIEVEMENTS } from '@/constants/achievementsCatalog';
 import { levelProgress, THEMES } from '@/constants/themes';
+import { useMyAchievements } from '@/lib/achievements';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, radius, spacing } from '@/theme';
 
@@ -22,6 +24,8 @@ export default function ProgressionScreen() {
   const xp = user?.xp ?? 0;
   const prog = levelProgress(xp);
   const unlockedThemes = THEMES.filter((t) => xp >= t.xpRequired).length;
+  const { data: unlockedAch } = useMyAchievements(user?.id);
+  const unlockedCount = ACHIEVEMENTS.filter((a) => unlockedAch?.has(a.key)).length;
 
   return (
     <View style={styles.root}>
@@ -88,6 +92,28 @@ export default function ProgressionScreen() {
             </Card>
           );
         })}
+
+        {/* Achievements */}
+        <View style={styles.section}>
+          <Text variant="heading">Achievements</Text>
+          <Text variant="label" color={colors.textSecondary}>{unlockedCount} / {ACHIEVEMENTS.length}</Text>
+        </View>
+        <View style={styles.achGrid}>
+          {ACHIEVEMENTS.map((a) => {
+            const got = unlockedAch?.has(a.key) ?? false;
+            return (
+              <View key={a.key} style={[styles.achTile, !got && styles.achLocked]}>
+                <Text style={styles.achEmoji}>{got ? a.emoji : '🔒'}</Text>
+                <Text variant="label" center color={got ? colors.textPrimary : colors.textMuted}>
+                  {a.label}
+                </Text>
+                <Text variant="caption" center color={colors.textSecondary}>
+                  {a.description}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
       </Screen>
     </View>
   );
@@ -131,4 +157,17 @@ const styles = StyleSheet.create({
   themeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   swatches: { flexDirection: 'row', borderRadius: radius.sm, overflow: 'hidden' },
   swatch: { width: 20, height: 36 },
+  achGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  achTile: {
+    width: '48%',
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    alignItems: 'center',
+    gap: 2,
+  },
+  achLocked: { opacity: 0.5 },
+  achEmoji: { fontSize: 30 },
 });
