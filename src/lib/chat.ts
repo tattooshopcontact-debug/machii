@@ -75,6 +75,8 @@ async function fetchMyConversations(userId: string): Promise<ConversationListIte
       xp: 0,
       bio: null,
       tags: [],
+      referral_code: null,
+      referred_by: null,
       created_at: c.created_at,
     };
     const sortedMessages = [...(c.messages ?? [])].sort((a, b) =>

@@ -19,6 +19,7 @@ export default function ProfileScreen() {
   const { user, signOut } = useAuthStore();
   const vehicleEnabled = useFeature('vehicle_info');
   const progressionEnabled = useFeature('progression');
+  const referralEnabled = useFeature('referral');
 
   if (!user) {
     return (
@@ -103,6 +104,15 @@ export default function ProfileScreen() {
             variant="secondary"
             left={<Ionicons name="trophy-outline" size={18} color={colors.textOnPrimary} />}
             onPress={() => router.push('/profile/progression' as never)}
+          />
+        )}
+
+        {referralEnabled && (
+          <Button
+            label="Parrainage"
+            variant="secondary"
+            left={<Ionicons name="gift-outline" size={18} color={colors.textOnPrimary} />}
+            onPress={() => router.push('/profile/referral' as never)}
           />
         )}
 

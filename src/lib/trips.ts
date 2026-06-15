@@ -48,6 +48,8 @@ export function mapTripFromDb(row: TripWithDriver): Trip {
     xp: 0,
     bio: null,
     tags: [],
+    referral_code: null,
+    referred_by: null,
     created_at: row.created_at,
   };
 

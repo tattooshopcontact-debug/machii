@@ -23,7 +23,8 @@ export type FeatureKey =
   | 'pickup_code'
   | 'arrival_confirm'
   | 'vehicle_info'
-  | 'progression';
+  | 'progression'
+  | 'referral';
 
 /**
  * Valeur de repli si les flags ne sont pas (encore) chargés. On garde les
@@ -39,6 +40,7 @@ const FALLBACK: Record<FeatureKey, boolean> = {
   arrival_confirm: false,
   vehicle_info: false,
   progression: false,
+  referral: false,
 };
 
 async function fetchFlags(): Promise<Record<string, boolean>> {

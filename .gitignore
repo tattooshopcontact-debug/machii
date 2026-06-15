@@ -47,3 +47,7 @@ example
 docs/play-store/*.aab
 docs/play-store/machii_play_store_assets.zip
 docs/play-store/package/04_machii.aab
+
+# Scripts locaux avec identifiants DB (ne pas committer)
+_apply.cjs
+_verify.cjs

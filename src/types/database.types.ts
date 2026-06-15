@@ -32,6 +32,8 @@ export type Database = {
           xp: number;
           bio: string | null;
           tags: string[];
+          referral_code: string | null;
+          referred_by: string | null;
           created_at: string;
         };
         Insert: {
@@ -49,6 +51,8 @@ export type Database = {
           xp?: number;
           bio?: string | null;
           tags?: string[];
+          referral_code?: string | null;
+          referred_by?: string | null;
         };
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>;
         Relationships: [];
@@ -432,6 +436,14 @@ export type Database = {
       confirm_arrival: {
         Args: { p_booking_id: string };
         Returns: { ok: boolean; reason?: string };
+      };
+      apply_referral: {
+        Args: { p_code: string };
+        Returns: { ok: boolean; reason?: string };
+      };
+      my_referral_count: {
+        Args: Record<string, never>;
+        Returns: number;
       };
       get_trip_vehicle: {
         Args: { p_trip_id: string };
