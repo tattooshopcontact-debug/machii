@@ -51,3 +51,4 @@ docs/play-store/package/04_machii.aab
 # Scripts locaux avec identifiants DB (ne pas committer)
 _apply.cjs
 _verify.cjs
+_*.cjs
