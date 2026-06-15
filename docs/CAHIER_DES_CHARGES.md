@@ -1,7 +1,7 @@
 # Machii — Cahier des charges & état d'avancement
 
 > Document de référence officiel. Source : cadrage Notion du 2026-05-05 (page `357d1de7e04b81dcac88dc2104dd7c83`, 19 décisions actées) + sessions de dev juin 2026 + audit Maroc 2026-06-11.
-> Mis à jour : **2026-06-12**. Toute nouvelle session de dev DOIT consulter et mettre à jour ce fichier.
+> Mis à jour : **2026-06-15**. Toute nouvelle session de dev DOIT consulter et mettre à jour ce fichier.
 
 ## Légende
 ✅ Fait et en prod (test interne) · 🟡 Partiellement fait · ⏸️ Pas commencé · ❌ Abandonné/remplacé
@@ -32,7 +32,7 @@
 | 14 | Nom Machii (secours Ploov) | ✅ | |
 | 15 | Onboarding : soft launch fermé inclusif + badge Founding Member (100 premiers) | 🟡 | Test interne Play Store = le soft launch fermé ✅. Badge Founding Member ⏸️ (lié à #17). |
 | 16 | Cadre légal TN : positionnement + **disclaimer permanent** | 🟡 | Bandeau "covoiturage gratuit loi 2004-33" présent sur create + profil ✅. Vérifier conformité complète du wording vs cadrage (CGU détaillées ⏸️). |
-| 17 | **Gamification : XP + 5 niveaux/thèmes débloquables + 8 achievements** | 🟡 | XP/level en DB ✅ + 8 avatars débloquables ✅ + **attribution AUTO de l'XP ✅ (2026-06-12, migration 0026 : +10/trajet terminé, +5/note ; niveau recalculé L1-L5 sur paliers 100/300/600/1000 ; testée serveur)**. + **écran "Ma progression" ✅ (2026-06-12, option F8) : niveau + barre XP vers niveau suivant + 5 thèmes débloquables (affichage statut locked/unlocked, cf src/constants/themes.ts)**. + **achievements ✅ (2026-06-12, migration 0028) : 8 badges, déblocage AUTO des 5 calculables (founding_member, fiable, coeur_genereux, excellence, triple_axe) +50 XP chacun ; grille dans l'écran progression**. MANQUE : +20 parrainage, application visuelle des thèmes (repeindre l'app), déblocage auto des 3 événementiels (Ramadan/Aïd/Indépendance — accordés à la main faute de calendrier). |
+| 17 | **Gamification : XP + 5 niveaux/thèmes débloquables + 8 achievements** | 🟡 | XP/level en DB ✅ + 8 avatars débloquables ✅ + **attribution AUTO de l'XP ✅ (2026-06-12, migration 0026 : +10/trajet terminé, +5/note ; niveau recalculé L1-L5 sur paliers 100/300/600/1000 ; testée serveur)**. + **écran "Ma progression" ✅ (2026-06-12, option F8) : niveau + barre XP vers niveau suivant + 5 thèmes débloquables (affichage statut locked/unlocked, cf src/constants/themes.ts)**. + **achievements ✅ (2026-06-12, migration 0028) : 8 badges, déblocage AUTO des 5 calculables (founding_member, fiable, coeur_genereux, excellence, triple_axe) +50 XP chacun ; grille dans l'écran progression**. MANQUE : ~~+20 parrainage~~ ✅ FAIT 2026-06-15 (F9, migration 0029), application visuelle des thèmes (repeindre l'app), déblocage auto des 3 événementiels (Ramadan/Aïd/Indépendance — accordés à la main faute de calendrier). |
 | 18 | **Trajets répétitifs** (annonce mère + occurrences, désactivation ponctuelle, rappels veille) | 🟡 | Le flag `is_recurring` + toggle "Répétitif" existent à la création, mais **pas de mécanique mère/occurrences**, pas de choix des jours, pas de rappels. À faire. |
 | 19 | Fork motis-project | ❌ | Caduc : app développée from scratch en Expo (plus rapide au final). |
 
@@ -69,6 +69,7 @@
 | F6 | Confirmation d'arrivée | `arrival_confirm` | v1.2.0 | 🔴 OFF (à publier) |
 | F7 | Véhicule + affichage échelonné (plaque après accept.) | `vehicle_info` | v1.2.0 | 🔴 OFF (à publier) |
 | F8 | Écran progression (XP, niveau, thèmes) | `progression` | v1.2.0 | 🔴 OFF (à publier) |
+| F9 | Parrainage (+20 XP parrain / +10 filleul) | `referral` | v1.2.0 | 🔴 OFF (à publier) |
 
 **Pour publier une option** (effet immédiat) : `select public.set_feature('pickup_code', true);` dans le SQL editor Supabase (ou via script `pg`). Pour dépublier : `false`.
 **Côté app** : `useFeature('<key>')` (src/lib/featureFlags.ts) — fallback sûr si flags non chargés. ⚠️ La prise en compte d'une NOUVELLE option gardée par flag nécessite que son code soit déjà dans le build installé ; F5/F6 ne seront visibles qu'après le prochain build (quota EAS → 1er juillet).
@@ -97,7 +98,7 @@
 13. **#18 complet** : trajets répétitifs mère/occurrences + rappels
 14. **#6-bis complet** : négociation libre du prix (offre/contre-offre)
 15. **#10 complet** : waypoint matching (suggestions "passe par chez toi")
-16. Parrainage (+20 XP, avatar Ambassadeur)
+16. ~~Parrainage (+20 XP)~~ 🟡 FAIT 2026-06-15 (migration 0029, option F9, commit 768c381) : code unique auto par profil + RPC `apply_referral`/`my_referral_count` + écran `profile/referral.tsx`. Reste : avatar/badge Ambassadeur.
 
 ### Bloc D — Monétisation & échelle
 17. **#1** : AdMob (interstitiel, rewarded, banner + mediation) — décision compte séparé vs pub-8948248750767535
