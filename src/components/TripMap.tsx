@@ -7,25 +7,44 @@
  *
  * Le prop `livePosition` est prévu pour l'étape temps réel : quand il est
  * fourni, un marqueur voiture suit la position du conducteur.
+ *
+ * ⚠️ react-native-maps est chargé PARESSEUSEMENT (même leçon qu'expo-notifications) :
+ * - Expo Go (SDK 53+) ne fournit plus Google Maps → l'import module-level
+ *   ferait crasher tout l'écran de détail du trajet.
+ * - Un build Android SANS clé API Google Maps crashe NATIVEMENT à l'affichage
+ *   de la MapView (impossible à try/catch en JS) → on vérifie la clé avant.
+ * Dans ces cas on affiche le schéma du trajet (TripMapSchematic) à la place.
  */
-import { StyleSheet, View } from 'react-native';
-import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from 'react-native-maps';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
+import { Platform, StyleSheet, View } from 'react-native';
 
+import { TripMapSchematic, type TripMapProps } from '@/components/TripMapSchematic';
 import { Text } from '@/components/ui';
 import { findCity } from '@/lib/geo';
 import { colors, radius } from '@/theme';
 
 type LatLng = { latitude: number; longitude: number };
 
-type TripMapProps = {
-  originLabel: string;
-  destinationLabel: string;
-  /** Position temps réel du conducteur (étape MAP-2). */
-  livePosition?: LatLng | null;
-  height?: number;
-};
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+const hasAndroidMapsKey =
+  Platform.OS !== 'android' || !!Constants.expoConfig?.android?.config?.googleMaps?.apiKey;
 
-export function TripMap({ originLabel, destinationLabel, livePosition, height = 180 }: TripMapProps) {
+let maps: typeof import('react-native-maps') | null = null;
+if (!isExpoGo && hasAndroidMapsKey) {
+  try {
+    maps = require('react-native-maps') as typeof import('react-native-maps');
+  } catch {
+    maps = null;
+  }
+}
+
+export function TripMap(props: TripMapProps) {
+  const { originLabel, destinationLabel, livePosition, height = 180 } = props;
+
+  if (!maps) {
+    return <TripMapSchematic {...props} />;
+  }
+
   const origin = findCity(originLabel);
   const destination = findCity(destinationLabel);
 
@@ -33,6 +52,9 @@ export function TripMap({ originLabel, destinationLabel, livePosition, height = 
   if (!origin || !destination) {
     return null;
   }
+
+  const MapView = maps.default;
+  const { Marker, Polyline, PROVIDER_DEFAULT } = maps;
 
   const o: LatLng = { latitude: origin.lat, longitude: origin.lng };
   const d: LatLng = { latitude: destination.lat, longitude: destination.lng };

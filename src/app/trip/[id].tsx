@@ -41,6 +41,9 @@ export default function TripDetailScreen() {
   // #11-B : partage du trajet à un proche (lien web 4h).
   const shareTrip = useShareTrip();
 
+  // F4 : carte du trajet (désactivable à distance si un build pose problème).
+  const mapEnabled = useFeature('trip_map');
+
   // #12-A : véhicule + affichage échelonné (option F7).
   const vehicleEnabled = useFeature('vehicle_info');
   const { data: vehicle } = useTripVehicle(vehicleEnabled ? id : undefined);
@@ -133,11 +136,13 @@ export default function TripDetailScreen() {
               {trip.driver.isVerified && <Badge label="Vérifié" tone="verified" icon="✓" />}
             </Card>
 
-            <TripMap
-              originLabel={trip.origin}
-              destinationLabel={trip.destination}
-              livePosition={livePosition}
-            />
+            {mapEnabled && (
+              <TripMap
+                originLabel={trip.origin}
+                destinationLabel={trip.destination}
+                livePosition={livePosition}
+              />
+            )}
 
             {livePosition && (
               <Card style={styles.liveBanner}>
