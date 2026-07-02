@@ -165,6 +165,20 @@ export async function getKycSignedUrl(path: string): Promise<string> {
   return data.signedUrl;
 }
 
+/**
+ * Vérification AUTOMATIQUE via Didit : démarre une session côté serveur
+ * (Edge Function didit-start) et renvoie l'URL du flux hébergé Didit
+ * (lecture CIN + selfie + liveness + comparaison des visages). Le résultat
+ * revient par webhook et met à jour le badge Vérifié tout seul.
+ */
+export async function startAutoVerification(): Promise<string> {
+  const { data, error } = await supabase.functions.invoke('didit-start', { body: {} });
+  if (error) throw new Error("Impossible de démarrer la vérification automatique. Réessaie.");
+  const url = (data as { url?: string } | null)?.url;
+  if (!url) throw new Error("Lien de vérification indisponible. Réessaie.");
+  return url;
+}
+
 // ---------------------------------------------------------------------------
 // Modération admin (migration 0034) — réservé aux profils is_admin.
 // ---------------------------------------------------------------------------

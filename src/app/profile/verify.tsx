@@ -3,10 +3,12 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as WebBrowser from 'expo-web-browser';
 
 import { Badge, Button, Card, Screen, Text } from '@/components/ui';
+import { useFeature } from '@/lib/featureFlags';
 import { describeError } from '@/lib/errors';
-import { pickKycImage, pickKycSelfie, useMyKyc, useUploadKyc, type KycDocType, type KycStatus } from '@/lib/kyc';
+import { pickKycImage, pickKycSelfie, startAutoVerification, useMyKyc, useUploadKyc, type KycDocType, type KycStatus } from '@/lib/kyc';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, radius, spacing } from '@/theme';
 
@@ -71,6 +73,8 @@ export default function VerifyScreen() {
   const { data: docs, isLoading } = useMyKyc(user?.id);
   const uploadKyc = useUploadKyc();
   const [uploading, setUploading] = useState<KycDocType | null>(null);
+  const [autoLoading, setAutoLoading] = useState(false);
+  const autoVerifyEnabled = useFeature('auto_verify');
 
   if (!user) {
     return (
@@ -88,6 +92,22 @@ export default function VerifyScreen() {
 
   const isDriverRole = user.role === 'driver' || user.role === 'both';
   const docsToShow = DOCS.filter((d) => !d.driverOnly || isDriverRole);
+
+  async function onAutoVerify() {
+    setAutoLoading(true);
+    try {
+      const url = await startAutoVerification();
+      await WebBrowser.openBrowserAsync(url);
+      Alert.alert(
+        'Vérification en cours',
+        "Une fois la vérification terminée, ton badge « Vérifié » s'active automatiquement en quelques instants.",
+      );
+    } catch (e) {
+      Alert.alert('Vérification impossible', describeError(e));
+    } finally {
+      setAutoLoading(false);
+    }
+  }
 
   async function onUpload(type: KycDocType, useSelfie = false) {
     if (!user) return;
@@ -128,6 +148,32 @@ export default function VerifyScreen() {
             </Text>
           </View>
         </Card>
+
+        {autoVerifyEnabled && (
+          <Card style={{ gap: spacing.sm, borderWidth: 1, borderColor: colors.accent }}>
+            <View style={styles.docHeader}>
+              <View style={styles.docIcon}>
+                <Ionicons name="flash" size={20} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text variant="bodyMedium">Vérification automatique (recommandé)</Text>
+                <Text variant="caption" color={colors.textSecondary}>
+                  Scanne ta CIN et prends un selfie : ton badge « Vérifié » s'active en quelques minutes, sans attendre.
+                </Text>
+              </View>
+            </View>
+            <Button
+              label={autoLoading ? 'Ouverture…' : 'Vérifier mon identité maintenant'}
+              onPress={onAutoVerify}
+              disabled={autoLoading}
+              loading={autoLoading}
+              left={<Ionicons name="shield-checkmark" size={18} color={colors.textOnPrimary} />}
+            />
+            <Text variant="caption" color={colors.textSecondary} center>
+              — ou envoie tes documents manuellement ci-dessous —
+            </Text>
+          </Card>
+        )}
 
         {isLoading && (
           <View style={{ paddingVertical: spacing.lg, alignItems: 'center' }}>
