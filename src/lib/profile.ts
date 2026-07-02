@@ -34,6 +34,7 @@ export function mapProfileFromDb(row: ProfileRow): UserProfile {
     gender: row.gender ?? null,
     role: row.role,
     isVerified: row.is_verified,
+    isAdmin: row.is_admin ?? false,
     level: row.level,
     xp: row.xp,
     xpForNextLevel: xpForLevel(row.level),

@@ -82,6 +82,8 @@ export type UserProfile = {
   gender?: 'female' | 'male' | null;
   role: Role;
   isVerified: boolean;
+  /** Modérateur KYC : accès à l'écran de validation des documents. */
+  isAdmin: boolean;
   level: number;
   xp: number;
   xpForNextLevel: number;

@@ -24,7 +24,8 @@ export type FeatureKey =
   | 'arrival_confirm'
   | 'vehicle_info'
   | 'progression'
-  | 'referral';
+  | 'referral'
+  | 'kyc_publish_gate';
 
 /**
  * Valeur de repli si les flags ne sont pas (encore) chargés. On garde les
@@ -41,6 +42,7 @@ const FALLBACK: Record<FeatureKey, boolean> = {
   vehicle_info: false,
   progression: false,
   referral: false,
+  kyc_publish_gate: false,
 };
 
 async function fetchFlags(): Promise<Record<string, boolean>> {

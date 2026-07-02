@@ -27,6 +27,8 @@ export type Database = {
           gender: 'female' | 'male' | null;
           role: Role;
           is_verified: boolean;
+          /** Modérateur KYC (migration 0034) — absent tant que la migration n'est pas appliquée. */
+          is_admin?: boolean;
           rating_avg: number;
           level: number;
           xp: number;
@@ -444,6 +446,26 @@ export type Database = {
       my_referral_count: {
         Args: Record<string, never>;
         Returns: number;
+      };
+      admin_list_kyc: {
+        Args: Record<string, never>;
+        Returns: {
+          doc_id: string;
+          profile_id: string;
+          full_name: string;
+          phone: string | null;
+          role: string;
+          is_verified: boolean;
+          doc_type: string;
+          file_path: string;
+          status: string;
+          created_at: string;
+          reviewed_at: string | null;
+        }[];
+      };
+      admin_review_kyc: {
+        Args: { p_doc_id: string; p_approve: boolean };
+        Returns: { ok: boolean; reason?: string; verified?: boolean };
       };
       get_trip_vehicle: {
         Args: { p_trip_id: string };

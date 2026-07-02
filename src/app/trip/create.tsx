@@ -9,6 +9,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { CityPicker } from '@/components/CityPicker';
 import { Button, Card, LegalBanner, Screen, Text } from '@/components/ui';
 import { describeError } from '@/lib/errors';
+import { useFeature } from '@/lib/featureFlags';
 import { cityToPoint, findCity, parseDepartureTime } from '@/lib/geo';
 import { supabase } from '@/lib/supabase';
 import { useMyVehicle } from '@/lib/vehicles';
@@ -37,6 +38,11 @@ export default function CreateTripScreen() {
   // Option femmes : proposée uniquement aux conductrices (gender = female).
   const canOfferWomenOnly = user?.gender === 'female';
 
+  // F10 — verrou KYC : quand le flag est ON, il faut être vérifié pour publier.
+  // (Le serveur applique le même verrou via trigger, l'UI ne fait que l'expliquer.)
+  const kycGateEnabled = useFeature('kyc_publish_gate');
+  const blockedByKyc = kycGateEnabled && !!user && !user.isVerified;
+
   const valid = !!origin && !!destination && origin !== destination;
 
   function toggleDay(i: number) {
@@ -47,6 +53,17 @@ export default function CreateTripScreen() {
     if (!valid || !origin || !destination) return;
     if (!user) {
       Alert.alert('Erreur', 'Connecte-toi avant de publier un trajet.');
+      return;
+    }
+    if (blockedByKyc) {
+      Alert.alert(
+        'Vérification requise',
+        'Pour la sécurité des passagers, fais vérifier ton identité avant de publier un trajet.',
+        [
+          { text: 'Plus tard', style: 'cancel' },
+          { text: 'Se faire vérifier', onPress: () => router.push('/profile/verify') },
+        ],
+      );
       return;
     }
 
@@ -94,7 +111,13 @@ export default function CreateTripScreen() {
         { text: 'OK', onPress: () => router.back() },
       ]);
     } catch (e: unknown) {
-      Alert.alert('Publication impossible', describeError(e));
+      const msg = describeError(e);
+      Alert.alert(
+        'Publication impossible',
+        msg.includes('kyc_required')
+          ? 'Fais vérifier ton identité (Profil → Se faire vérifier) avant de publier un trajet.'
+          : msg,
+      );
     } finally {
       setSubmitting(false);
     }
@@ -212,10 +235,26 @@ export default function CreateTripScreen() {
 
         <LegalBanner compact country={user?.country ?? 'TN'} />
 
+        {blockedByKyc && (
+          <Pressable style={styles.kycNotice} onPress={() => router.push('/profile/verify')}>
+            <Ionicons name="shield-checkmark-outline" size={22} color={colors.primary} />
+            <View style={{ flex: 1 }}>
+              <Text variant="bodyMedium" color={colors.primary}>
+                Vérification d'identité requise
+              </Text>
+              <Text variant="caption" color={colors.textSecondary}>
+                Envoie ta CIN, ton permis, ta carte grise et une photo du véhicule pour pouvoir
+                publier. Appuie ici pour commencer.
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          </Pressable>
+        )}
+
         <Button
-          label="Publier le trajet"
-          onPress={onPublish}
-          disabled={!valid || submitting}
+          label={blockedByKyc ? 'Se faire vérifier pour publier' : 'Publier le trajet'}
+          onPress={blockedByKyc ? () => router.push('/profile/verify') : onPublish}
+          disabled={(!valid && !blockedByKyc) || submitting}
           loading={submitting}
           style={{ marginTop: spacing.sm }}
         />
@@ -226,6 +265,16 @@ export default function CreateTripScreen() {
 
 const styles = StyleSheet.create({
   womenRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, backgroundColor: 'rgba(27,61,110,0.05)', borderRadius: 12 },
+  kycNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    backgroundColor: 'rgba(255,199,44,0.15)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.accent,
+  },
   root: { flex: 1, backgroundColor: colors.background },
   header: {
     backgroundColor: colors.primary,

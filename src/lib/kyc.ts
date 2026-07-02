@@ -148,3 +148,74 @@ export async function getKycSignedUrl(path: string): Promise<string> {
   if (error) throw error;
   return data.signedUrl;
 }
+
+// ---------------------------------------------------------------------------
+// Modération admin (migration 0034) — réservé aux profils is_admin.
+// ---------------------------------------------------------------------------
+
+export type KycAdminEntry = {
+  docId: string;
+  profileId: string;
+  fullName: string;
+  phone: string | null;
+  role: string;
+  isVerified: boolean;
+  docType: KycDocType;
+  filePath: string;
+  status: KycStatus;
+  createdAt: string;
+  reviewedAt: string | null;
+};
+
+async function fetchKycAdminList(): Promise<KycAdminEntry[]> {
+  const { data, error } = await supabase.rpc('admin_list_kyc');
+  if (error) throw error;
+  return (data ?? []).map((r) => ({
+    docId: r.doc_id,
+    profileId: r.profile_id,
+    fullName: r.full_name,
+    phone: r.phone,
+    role: r.role,
+    isVerified: r.is_verified,
+    docType: r.doc_type as KycDocType,
+    filePath: r.file_path,
+    status: r.status as KycStatus,
+    createdAt: r.created_at,
+    reviewedAt: r.reviewed_at,
+  }));
+}
+
+export function useKycAdminList(enabled: boolean) {
+  return useQuery({
+    queryKey: ['kyc', 'admin'],
+    queryFn: fetchKycAdminList,
+    enabled,
+    staleTime: 10_000,
+  });
+}
+
+async function reviewKyc(docId: string, approve: boolean): Promise<void> {
+  const { data, error } = await supabase.rpc('admin_review_kyc', {
+    p_doc_id: docId,
+    p_approve: approve,
+  });
+  if (error) throw error;
+  const res = data as { ok: boolean; reason?: string } | null;
+  if (!res?.ok) {
+    const reasons: Record<string, string> = {
+      not_admin: "Ton compte n'a pas les droits de modération.",
+      not_found: 'Document introuvable.',
+    };
+    throw new Error(reasons[res?.reason ?? ''] ?? 'Validation impossible.');
+  }
+}
+
+export function useReviewKyc() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ docId, approve }: { docId: string; approve: boolean }) => reviewKyc(docId, approve),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['kyc'] });
+    },
+  });
+}

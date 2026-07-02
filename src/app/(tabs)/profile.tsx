@@ -98,6 +98,15 @@ export default function ProfileScreen() {
           />
         )}
 
+        {user.isAdmin && (
+          <Button
+            label="Validation des documents (admin)"
+            variant="secondary"
+            left={<Ionicons name="shield-half-outline" size={18} color={colors.textOnPrimary} />}
+            onPress={() => router.push('/profile/kyc-review' as never)}
+          />
+        )}
+
         {progressionEnabled && (
           <Button
             label="Ma progression"

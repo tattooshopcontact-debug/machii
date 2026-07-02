@@ -1,6 +1,6 @@
-/**
- * Données de démonstration — V1 tourne sans backend.
- * À remplacer par les requêtes Supabase (RPC search_trips, etc.) au fur et à mesure.
+﻿/**
+ * DonnÃ©es de dÃ©monstration â€” V1 tourne sans backend.
+ * Ã€ remplacer par les requÃªtes Supabase (RPC search_trips, etc.) au fur et Ã  mesure.
  */
 import type { Conversation, Trip, UserProfile } from '@/types/models';
 
@@ -49,7 +49,7 @@ export const DEMO_MATCH: Trip = {
   id: 'm1',
   driver: { id: 'd4', fullName: 'Karim Feki', avatarTint: 'orange', ratingAvg: 4.9, tripCount: 33, isVerified: true },
   origin: 'Tunis',
-  destination: 'Gabès',
+  destination: 'GabÃ¨s',
   via: 'passe par Sfax',
   departureTime: '2026-06-06T09:00:00+01:00',
   seatsAvailable: 2,
@@ -66,7 +66,7 @@ export const DEMO_CONVERSATIONS: Conversation[] = [
     tripId: 't1',
     withName: 'Ahmed Ben Salah',
     withTint: 'orange',
-    lastMessage: 'Parfait, rendez-vous à 8h devant la station.',
+    lastMessage: 'Parfait, rendez-vous Ã  8h devant la station.',
     lastAt: '2026-06-04T18:12:00+01:00',
     unread: 1,
     online: true,
@@ -76,7 +76,7 @@ export const DEMO_CONVERSATIONS: Conversation[] = [
     tripId: 't2',
     withName: 'Sami Trabelsi',
     withTint: 'navy',
-    lastMessage: 'Ok pour demain 👍',
+    lastMessage: 'Ok pour demain ðŸ‘',
     lastAt: '2026-06-04T12:40:00+01:00',
     unread: 0,
   },
@@ -90,25 +90,26 @@ export const DEMO_PROFILE: UserProfile = {
   country: 'TN',
   role: 'both',
   isVerified: true,
+  isAdmin: false,
   level: 3,
   xp: 380,
   xpForNextLevel: 600,
   ratingAvg: 4.8,
   criteria: [
-    { key: 'punctuality', label: 'Ponctualité', value: 4.9 },
-    { key: 'cleanliness', label: 'Propreté', value: 4.6 },
+    { key: 'punctuality', label: 'PonctualitÃ©', value: 4.9 },
+    { key: 'cleanliness', label: 'PropretÃ©', value: 4.6 },
     { key: 'driving', label: 'Conduite', value: 4.8 },
     { key: 'friendliness', label: 'Sympathie', value: 4.9 },
   ],
   achievements: [
-    { key: 'founding', label: 'Founding Member', emoji: '🚀', unlocked: true },
-    { key: 'triple_axis', label: 'Triple Axe', emoji: '🛣️', unlocked: true },
-    { key: 'generous', label: 'Cœur Généreux', emoji: '💛', unlocked: true },
-    { key: 'reliable', label: 'Fiable', emoji: '✅', unlocked: true },
-    { key: 'aid', label: 'Aïd Spirit', emoji: '🌙', unlocked: false },
-    { key: 'ramadan', label: 'Ramadan Explorer', emoji: '✨', unlocked: false },
-    { key: 'independence', label: '20 mars', emoji: '🇹🇳', unlocked: false },
-    { key: 'excellence', label: 'Excellence 5★', emoji: '🏆', unlocked: false },
+    { key: 'founding', label: 'Founding Member', emoji: 'ðŸš€', unlocked: true },
+    { key: 'triple_axis', label: 'Triple Axe', emoji: 'ðŸ›£ï¸', unlocked: true },
+    { key: 'generous', label: 'CÅ“ur GÃ©nÃ©reux', emoji: 'ðŸ’›', unlocked: true },
+    { key: 'reliable', label: 'Fiable', emoji: 'âœ…', unlocked: true },
+    { key: 'aid', label: 'AÃ¯d Spirit', emoji: 'ðŸŒ™', unlocked: false },
+    { key: 'ramadan', label: 'Ramadan Explorer', emoji: 'âœ¨', unlocked: false },
+    { key: 'independence', label: '20 mars', emoji: 'ðŸ‡¹ðŸ‡³', unlocked: false },
+    { key: 'excellence', label: 'Excellence 5â˜…', emoji: 'ðŸ†', unlocked: false },
   ],
   tags: ['Non-fumeur', 'Musique OK', 'Discussion'],
 };
