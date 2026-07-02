@@ -383,7 +383,7 @@ export type Database = {
         Row: {
           id: string;
           profile_id: string;
-          doc_type: 'cin' | 'permis' | 'carte_grise' | 'photo_vehicule';
+          doc_type: 'cin' | 'selfie' | 'permis' | 'carte_grise' | 'photo_vehicule';
           file_path: string;
           status: 'pending' | 'approved' | 'rejected';
           reviewed_at: string | null;
@@ -392,7 +392,7 @@ export type Database = {
         Insert: {
           id?: string;
           profile_id: string;
-          doc_type: 'cin' | 'permis' | 'carte_grise' | 'photo_vehicule';
+          doc_type: 'cin' | 'selfie' | 'permis' | 'carte_grise' | 'photo_vehicule';
           file_path: string;
           status?: 'pending' | 'approved' | 'rejected';
           reviewed_at?: string | null;

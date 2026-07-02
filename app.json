@@ -62,7 +62,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Machii accède à tes photos pour ta photo de profil et tes documents de vérification."
+          "photosPermission": "Machii accède à tes photos pour ta photo de profil et tes documents de vérification.",
+          "cameraPermission": "Machii utilise la caméra pour ton selfie de vérification d'identité."
         }
       ],
       [

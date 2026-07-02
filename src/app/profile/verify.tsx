@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Badge, Button, Card, Screen, Text } from '@/components/ui';
 import { describeError } from '@/lib/errors';
-import { pickKycImage, useMyKyc, useUploadKyc, type KycDocType, type KycStatus } from '@/lib/kyc';
+import { pickKycImage, pickKycSelfie, useMyKyc, useUploadKyc, type KycDocType, type KycStatus } from '@/lib/kyc';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, radius, spacing } from '@/theme';
 
@@ -16,6 +16,8 @@ type Doc = {
   description: string;
   icon: keyof typeof import('@expo/vector-icons').Ionicons.glyphMap;
   driverOnly?: boolean;
+  /** true = photo prise EN DIRECT avec la caméra (selfie), pas depuis la galerie. */
+  selfie?: boolean;
 };
 
 const DOCS: Doc[] = [
@@ -24,6 +26,13 @@ const DOCS: Doc[] = [
     label: 'Pièce d\'identité (CIN)',
     description: 'Photo recto ou recto/verso, lisible et non floue.',
     icon: 'card-outline',
+  },
+  {
+    type: 'selfie',
+    label: 'Selfie (photo de ton visage)',
+    description: 'Prends-toi en photo maintenant, visage bien visible. On vérifie que tu es la même personne que sur ta CIN.',
+    icon: 'happy-outline',
+    selfie: true,
   },
   {
     type: 'permis',
@@ -80,11 +89,11 @@ export default function VerifyScreen() {
   const isDriverRole = user.role === 'driver' || user.role === 'both';
   const docsToShow = DOCS.filter((d) => !d.driverOnly || isDriverRole);
 
-  async function onUpload(type: KycDocType) {
+  async function onUpload(type: KycDocType, useSelfie = false) {
     if (!user) return;
     setUploading(type);
     try {
-      const asset = await pickKycImage();
+      const asset = useSelfie ? await pickKycSelfie() : await pickKycImage();
       if (!asset) return;
       await uploadKyc.mutateAsync({ userId: user.id, docType: type, asset });
       Alert.alert('Document envoyé', 'Il sera examiné dans les 24 à 48h.');
@@ -145,13 +154,19 @@ export default function VerifyScreen() {
               </View>
               <Button
                 variant={existing ? 'outline' : 'primary'}
-                label={isUploading ? 'Envoi…' : existing ? 'Remplacer la photo' : 'Choisir une photo'}
-                onPress={() => onUpload(doc.type)}
+                label={
+                  isUploading
+                    ? 'Envoi…'
+                    : doc.selfie
+                      ? existing ? 'Reprendre le selfie' : 'Prendre un selfie'
+                      : existing ? 'Remplacer la photo' : 'Choisir une photo'
+                }
+                onPress={() => onUpload(doc.type, doc.selfie)}
                 disabled={isUploading}
                 loading={isUploading}
                 left={
                   <Ionicons
-                    name="cloud-upload-outline"
+                    name={doc.selfie ? 'camera-outline' : 'cloud-upload-outline'}
                     size={18}
                     color={existing ? colors.primary : colors.textOnPrimary}
                   />

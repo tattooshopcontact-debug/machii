@@ -26,6 +26,7 @@ import { colors, radius, spacing } from '@/theme';
 
 const DOC_LABEL: Record<KycDocType, string> = {
   cin: "Pièce d'identité (CIN)",
+  selfie: 'Selfie (visage)',
   permis: 'Permis de conduire',
   carte_grise: 'Carte grise',
   photo_vehicule: 'Photo du véhicule',

@@ -12,7 +12,7 @@ import { supabase } from '@/lib/supabase';
 
 const BUCKET = 'kyc';
 
-export type KycDocType = 'cin' | 'permis' | 'carte_grise' | 'photo_vehicule';
+export type KycDocType = 'cin' | 'selfie' | 'permis' | 'carte_grise' | 'photo_vehicule';
 export type KycStatus = 'pending' | 'approved' | 'rejected';
 
 export type KycDocument = {
@@ -30,6 +30,22 @@ export async function pickKycImage(): Promise<ImagePicker.ImagePickerAsset | nul
   if (!perm.granted) throw new Error("L'accès à tes photos est nécessaire pour envoyer un document.");
   const r = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    allowsEditing: false,
+    quality: 0.85,
+  });
+  if (r.canceled || !r.assets?.[0]) return null;
+  return r.assets[0];
+}
+
+/**
+ * Selfie : pris EN DIRECT avec la caméra frontale (pas depuis la galerie) pour
+ * garantir que c'est bien la personne, afin de comparer avec la photo de la CIN.
+ */
+export async function pickKycSelfie(): Promise<ImagePicker.ImagePickerAsset | null> {
+  const perm = await ImagePicker.requestCameraPermissionsAsync();
+  if (!perm.granted) throw new Error("L'accès à la caméra est nécessaire pour prendre ton selfie.");
+  const r = await ImagePicker.launchCameraAsync({
+    cameraType: ImagePicker.CameraType.front,
     allowsEditing: false,
     quality: 0.85,
   });
