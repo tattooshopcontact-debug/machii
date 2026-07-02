@@ -27,7 +27,7 @@ export default function ReferralScreen() {
   async function onShare() {
     if (!data?.code) return;
     await Share.share({
-      message: `Rejoins-moi sur Machii, le covoiturage le plus sûr 🚗\nUtilise mon code parrain : ${data.code}`,
+      message: `Rejoins-moi sur Machii, la communauté qui partage la route 🚗\nUtilise mon code parrain : ${data.code}`,
     });
   }
 

@@ -46,7 +46,7 @@ const DOCS: Doc[] = [
   {
     type: 'carte_grise',
     label: 'Carte grise du véhicule',
-    description: 'Document du véhicule que tu utilises pour le covoiturage.',
+    description: 'Document du véhicule que tu utilises pour partager tes trajets.',
     icon: 'document-text-outline',
     driverOnly: true,
   },

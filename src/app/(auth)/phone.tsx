@@ -63,8 +63,8 @@ export default function PhoneScreen() {
         <Logo size={40} inverted />
         <Text variant="body" color="rgba(255,255,255,0.85)" style={styles.tagline}>
           {country.code === 'MA'
-            ? "L'app de covoiturage la plus sûre du Maroc"
-            : "L'app de covoiturage la plus sûre de Tunisie"}
+            ? 'La communauté qui partage la route, en toute confiance'
+            : 'La communauté qui partage la route, en toute confiance'}
         </Text>
       </View>
 
