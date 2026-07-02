@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
@@ -76,6 +76,16 @@ export default function VerifyScreen() {
   const [uploading, setUploading] = useState<KycDocType | null>(null);
   const [autoLoading, setAutoLoading] = useState(false);
   const autoVerifyEnabled = useFeature('auto_verify');
+
+  // À l'ouverture de l'écran : si une vérification Didit récente a été approuvée
+  // (webhook non garanti), on rattrape le badge tout seul.
+  useEffect(() => {
+    if (!autoVerifyEnabled || !user || user.isVerified) return;
+    (async () => {
+      if (await checkAutoVerification()) await loadSession();
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoVerifyEnabled]);
 
   if (!user) {
     return (
