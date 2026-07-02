@@ -6,7 +6,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CityPicker } from '@/components/CityPicker';
 import { Button, Card, LegalBanner, Screen, Text } from '@/components/ui';
-import { findCountry } from '@/constants/cities';
 import { describeError } from '@/lib/errors';
 import { useDeleteTrip, useTrip, useUpdateTrip } from '@/lib/trips';
 import { useAuthStore } from '@/stores/authStore';
@@ -34,7 +33,8 @@ export default function EditTripScreen() {
   const [destination, setDestination] = useState<string | null>(null);
   const [time, setTime] = useState('18:00');
   const [seats, setSeats] = useState(3);
-  const [price, setPrice] = useState('');
+  // Offert (0) ou participation à convenir de gré à gré (null) — pas de montant.
+  const [priceMode, setPriceMode] = useState<'free' | 'negotiable'>('negotiable');
 
   // Charge les valeurs du trip dès qu'il arrive.
   useEffect(() => {
@@ -44,23 +44,18 @@ export default function EditTripScreen() {
     const d = new Date(trip.departureTime);
     setTime(`${pad2(d.getHours())}:${pad2(d.getMinutes())}`);
     setSeats(trip.seatsTotal);
-    setPrice(trip.pricePerSeat == null ? '' : String(trip.pricePerSeat));
+    setPriceMode(trip.pricePerSeat === 0 ? 'free' : 'negotiable');
   }, [trip]);
 
   const isOwner = !!user && !!trip && trip.driver.id === user.id;
   const validForm = !!origin && !!destination && origin !== destination;
-  // Devise + villes + cadre légal suivent le PAYS DU TRAJET (pas celui du user) :
-  // un trajet marocain s'édite en DH avec les villes MA, même chose pour la TN.
+  // Villes + cadre légal suivent le PAYS DU TRAJET (pas celui du user) :
+  // un trajet marocain s'édite avec les villes MA, même chose pour la TN.
   const tripCountry = trip?.country ?? 'TN';
-  const currency = findCountry(tripCountry).currency;
 
   async function onSave() {
     if (!trip || !validForm) return;
     try {
-      const parsedPrice = price.trim() === '' ? null : Number(price);
-      if (parsedPrice !== null && Number.isNaN(parsedPrice)) {
-        throw new Error('Prix invalide.');
-      }
       await updateTrip.mutateAsync({
         id: trip.id,
         patch: {
@@ -68,7 +63,7 @@ export default function EditTripScreen() {
           destination: destination!,
           time,
           seats,
-          price: parsedPrice,
+          price: priceMode === 'free' ? 0 : null,
         },
       });
       Alert.alert('Trajet modifié', 'Tes changements ont été enregistrés.', [
@@ -186,20 +181,29 @@ export default function EditTripScreen() {
 
             <View>
               <View style={styles.priceLabel}>
-                <Text variant="bodyMedium">Participation suggérée</Text>
-                <Text variant="caption">Facultatif</Text>
+                <Text variant="bodyMedium">Participation aux frais</Text>
               </View>
-              <View style={styles.priceInputRow}>
-                <TextInput
-                  value={price}
-                  onChangeText={setPrice}
-                  placeholder="0"
-                  placeholderTextColor={colors.textMuted}
-                  keyboardType="number-pad"
-                  style={styles.priceInput}
-                />
-                <Text variant="subtitle" color={colors.textSecondary}>{currency}</Text>
+              <View style={styles.modeRow}>
+                <Pressable
+                  style={[styles.modeBtn, priceMode === 'free' && styles.modeBtnActive]}
+                  onPress={() => setPriceMode('free')}
+                >
+                  <Ionicons name="gift-outline" size={18} color={priceMode === 'free' ? colors.primary : colors.textMuted} />
+                  <Text variant="bodyMedium" color={priceMode === 'free' ? colors.primary : colors.textSecondary}>Offert</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.modeBtn, priceMode === 'negotiable' && styles.modeBtnActive]}
+                  onPress={() => setPriceMode('negotiable')}
+                >
+                  <Ionicons name="chatbubbles-outline" size={18} color={priceMode === 'negotiable' ? colors.primary : colors.textMuted} />
+                  <Text variant="bodyMedium" color={priceMode === 'negotiable' ? colors.primary : colors.textSecondary}>À convenir</Text>
+                </Pressable>
               </View>
+              <Text variant="caption" color={colors.textMuted} style={{ marginTop: spacing.xs }}>
+                {priceMode === 'free'
+                  ? 'Tu offres le trajet à tes passagers.'
+                  : 'Vous convenez ensemble de la participation aux frais, dans le chat.'}
+              </Text>
             </View>
           </Card>
 
@@ -266,15 +270,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   priceLabel: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm },
-  priceInputRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  priceInput: {
+  modeRow: { flexDirection: 'row', gap: spacing.sm },
+  modeBtn: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     backgroundColor: colors.surfaceAlt,
     borderRadius: radius.md,
-    paddingHorizontal: spacing.lg,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
     paddingVertical: spacing.md,
-    fontFamily: fonts.semibold,
-    fontSize: fontSize.lg,
-    color: colors.textPrimary,
+  },
+  modeBtnActive: {
+    borderColor: colors.primary,
+    backgroundColor: 'rgba(27,61,110,0.06)',
   },
 });

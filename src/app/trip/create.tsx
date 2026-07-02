@@ -31,7 +31,9 @@ export default function CreateTripScreen() {
   const [days, setDays] = useState<number[]>([]);
   const [time, setTime] = useState('18:00');
   const [seats, setSeats] = useState(3);
-  const [price, setPrice] = useState('');
+  // Le conducteur choisit : trajet offert (gratuit) ou participation aux frais à
+  // convenir de gré à gré avec le passager (aucun montant imposé — loi 2004-33).
+  const [priceMode, setPriceMode] = useState<'free' | 'negotiable'>('negotiable');
   const [womenOnly, setWomenOnly] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -77,10 +79,8 @@ export default function CreateTripScreen() {
     setSubmitting(true);
     try {
       const departureTime = parseDepartureTime(time);
-      const parsedPrice = price.trim() === '' ? null : Number(price);
-      if (parsedPrice !== null && Number.isNaN(parsedPrice)) {
-        throw new Error('Prix invalide.');
-      }
+      // Gratuit = 0 ; À négocier = null (participation convenue de gré à gré).
+      const parsedPrice = priceMode === 'free' ? 0 : null;
 
       const { error } = await supabase.from('trips').insert({
         driver_id: user.id,
@@ -197,20 +197,29 @@ export default function CreateTripScreen() {
 
           <View>
             <View style={styles.priceLabel}>
-              <Text variant="bodyMedium">Participation suggérée</Text>
-              <Text variant="caption">Facultatif</Text>
+              <Text variant="bodyMedium">Participation aux frais</Text>
             </View>
-            <View style={styles.priceInputRow}>
-              <TextInput
-                value={price}
-                onChangeText={setPrice}
-                placeholder="0"
-                placeholderTextColor={colors.textMuted}
-                keyboardType="number-pad"
-                style={styles.priceInput}
-              />
-              <Text variant="subtitle" color={colors.textSecondary}>{(user?.country ?? 'TN') === 'MA' ? 'DH' : 'DT'}</Text>
+            <View style={styles.modeRow}>
+              <Pressable
+                style={[styles.modeBtn, priceMode === 'free' && styles.modeBtnActive]}
+                onPress={() => setPriceMode('free')}
+              >
+                <Ionicons name="gift-outline" size={18} color={priceMode === 'free' ? colors.primary : colors.textMuted} />
+                <Text variant="bodyMedium" color={priceMode === 'free' ? colors.primary : colors.textSecondary}>Offert</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.modeBtn, priceMode === 'negotiable' && styles.modeBtnActive]}
+                onPress={() => setPriceMode('negotiable')}
+              >
+                <Ionicons name="chatbubbles-outline" size={18} color={priceMode === 'negotiable' ? colors.primary : colors.textMuted} />
+                <Text variant="bodyMedium" color={priceMode === 'negotiable' ? colors.primary : colors.textSecondary}>À convenir</Text>
+              </Pressable>
             </View>
+            <Text variant="caption" color={colors.textMuted} style={{ marginTop: spacing.xs }}>
+              {priceMode === 'free'
+                ? 'Tu offres le trajet à tes passagers.'
+                : 'Vous vous mettez d’accord ensemble sur la participation aux frais (carburant, péage), directement dans le chat.'}
+            </Text>
           </View>
         </Card>
 
@@ -324,15 +333,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   priceLabel: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm },
-  priceInputRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  priceInput: {
+  modeRow: { flexDirection: 'row', gap: spacing.sm },
+  modeBtn: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     backgroundColor: colors.surfaceAlt,
     borderRadius: radius.md,
-    paddingHorizontal: spacing.lg,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
     paddingVertical: spacing.md,
-    fontFamily: fonts.semibold,
-    fontSize: fontSize.lg,
-    color: colors.textPrimary,
+  },
+  modeBtnActive: {
+    borderColor: colors.primary,
+    backgroundColor: 'rgba(27,61,110,0.06)',
   },
 });

@@ -274,7 +274,7 @@ export default function TripDetailScreen() {
             )}
 
             <Card style={styles.priceCard}>
-              <Text variant="body" color={colors.textSecondary}>Participation suggérée</Text>
+              <Text variant="body" color={colors.textSecondary}>Participation aux frais</Text>
               <Text variant="title" color={trip.pricePerSeat === 0 ? colors.success : colors.primary}>
                 {formatPrice(trip.pricePerSeat, trip.country)}
               </Text>

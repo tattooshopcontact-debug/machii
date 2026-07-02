@@ -22,7 +22,7 @@ export function formatTime(iso: string): string {
  * Cap Maroc : la devise suit le pays du trajet ('TN' → DT, 'MA' → DH).
  */
 export function formatPrice(price: Trip['pricePerSeat'], country: 'TN' | 'MA' = 'TN'): string {
-  if (price === null) return 'À négocier';
+  if (price === null) return 'À convenir';
   if (price === 0) return 'Gratuit';
   return `${price} ${country === 'MA' ? 'DH' : 'DT'}`;
 }
