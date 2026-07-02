@@ -8,7 +8,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { Badge, Button, Card, Screen, Text } from '@/components/ui';
 import { useFeature } from '@/lib/featureFlags';
 import { describeError } from '@/lib/errors';
-import { pickKycImage, pickKycSelfie, startAutoVerification, useMyKyc, useUploadKyc, type KycDocType, type KycStatus } from '@/lib/kyc';
+import { pickKycImage, pickKycSelfie, startAutoVerification, checkAutoVerification, useMyKyc, useUploadKyc, type KycDocType, type KycStatus } from '@/lib/kyc';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, radius, spacing } from '@/theme';
 
@@ -70,6 +70,7 @@ export default function VerifyScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
+  const loadSession = useAuthStore((s) => s.loadSession);
   const { data: docs, isLoading } = useMyKyc(user?.id);
   const uploadKyc = useUploadKyc();
   const [uploading, setUploading] = useState<KycDocType | null>(null);
@@ -97,11 +98,22 @@ export default function VerifyScreen() {
     setAutoLoading(true);
     try {
       const url = await startAutoVerification();
+      // Le navigateur se ferme au retour de l'utilisateur → on vérifie le résultat.
       await WebBrowser.openBrowserAsync(url);
-      Alert.alert(
-        'Vérification en cours',
-        "Une fois la vérification terminée, ton badge « Vérifié » s'active automatiquement en quelques instants.",
-      );
+      const verified = await checkAutoVerification();
+      if (verified) {
+        await loadSession(); // rafraîchit le badge « Vérifié » dans le profil
+        Alert.alert('Identité vérifiée ✓', 'Ton badge « Vérifié » est maintenant actif. Merci !');
+      } else {
+        // Laisse une 2ᵉ chance : Didit peut mettre quelques secondes à finaliser.
+        setTimeout(async () => {
+          if (await checkAutoVerification()) await loadSession();
+        }, 6000);
+        Alert.alert(
+          'Vérification en cours',
+          "Si tu as terminé, ton badge « Vérifié » s'activera dans quelques instants. Tu peux rouvrir cette page pour vérifier.",
+        );
+      }
     } catch (e) {
       Alert.alert('Vérification impossible', describeError(e));
     } finally {

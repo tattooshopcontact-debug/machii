@@ -179,6 +179,17 @@ export async function startAutoVerification(): Promise<string> {
   return url;
 }
 
+/**
+ * Vérifie ACTIVEMENT le résultat de la dernière session Didit (sans dépendre du
+ * webhook) et met à jour is_verified côté serveur. Renvoie true si vérifié.
+ * Appelé au retour du navigateur de vérification.
+ */
+export async function checkAutoVerification(): Promise<boolean> {
+  const { data, error } = await supabase.functions.invoke('didit-check', { body: {} });
+  if (error) return false;
+  return !!(data as { verified?: boolean } | null)?.verified;
+}
+
 // ---------------------------------------------------------------------------
 // Modération admin (migration 0034) — réservé aux profils is_admin.
 // ---------------------------------------------------------------------------
