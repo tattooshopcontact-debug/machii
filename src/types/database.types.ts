@@ -467,6 +467,10 @@ export type Database = {
         Args: { p_doc_id: string; p_approve: boolean };
         Returns: { ok: boolean; reason?: string; verified?: boolean };
       };
+      request_booking: {
+        Args: { p_trip_id: string };
+        Returns: { ok: boolean; reason?: string; reactivated?: boolean };
+      };
       get_trip_vehicle: {
         Args: { p_trip_id: string };
         Returns: {

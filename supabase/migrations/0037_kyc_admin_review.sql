@@ -1,37 +1,40 @@
 -- ============================================================================
--- Machii — KYC : verrou de publication + modération admin DANS l'app.
+-- Machii — KYC : verrou de publication + modération admin DANS l'app + DURCISSEMENT.
 --
 -- 1. profiles.is_admin : identifie les modérateurs (Faouez).
--- 2. Flag F10 `kyc_publish_gate` (OFF par défaut) : quand il est ON, un
---    conducteur NON vérifié ne peut plus publier de trajet. OFF pendant le
---    test fermé pour ne pas bloquer les testeurs, ON à la mise en production.
---    Le verrou est appliqué CÔTÉ SERVEUR (trigger) + côté client (UI).
--- 3. RPC admin_list_kyc / admin_review_kyc : l'admin voit les documents et
---    approuve/refuse depuis l'app. À l'approbation, le badge "Vérifié" du
---    profil est recalculé automatiquement selon le rôle :
---      conducteur (driver/both) = cin + permis + carte_grise + photo_vehicule
---      passager                 = cin seule
--- 4. Policy storage : l'admin peut lire les documents du bucket kyc
---    (nécessaire pour générer les signed URLs des aperçus).
+-- 2. Flag F10 `kyc_publish_gate` (OFF par défaut) : quand ON, un conducteur NON
+--    vérifié ne peut plus publier (trigger serveur + UI).
+-- 3. DURCISSEMENT KYC (audit sécurité 2026-07-02) : un utilisateur ne doit PAS
+--    pouvoir valider ses propres documents. La policy historique "kyc owner"
+--    (FOR ALL, 0001) laissait le propriétaire écrire `status='approved'` sur ses
+--    lignes. On ajoute :
+--      - colonne `reviewed_by` (qui a validé) ;
+--      - trigger `kyc_guard_and_reset` : force status='pending' à l'upload, remet
+--        en attente sur ré-upload, et GÈLE status/reviewed_at/reviewed_by pour
+--        tout non-admin (les décisions passent par admin_review_kyc uniquement) ;
+--      - le recompte de `is_verified` n'accepte QUE les docs `approved` avec
+--        `reviewed_by` non null (donc validés par un admin, jamais auto-posés).
+-- 4. DURCISSEMENT profiles : trigger `guard_profile_privileged_columns` qui
+--    empêche tout non-admin de modifier is_admin / is_verified (ferme aussi le
+--    trou historique : "profiles self update" sans WITH CHECK).
+-- 5. RPC admin_list_kyc / admin_review_kyc + policy storage lecture admin.
 --
--- Pour donner les droits admin à un compte (à faire une fois, SQL editor) :
+-- Donner les droits admin (une fois, SQL editor) :
 --   update public.profiles set is_admin = true where phone = '+216XXXXXXXX';
 --
 -- Idempotent.
 -- ============================================================================
 
--- 1. Colonne admin ------------------------------------------------------------
+-- 1. Colonnes ------------------------------------------------------------------
 alter table public.profiles add column if not exists is_admin boolean not null default false;
+alter table public.kyc_documents add column if not exists reviewed_by uuid references public.profiles(id);
 
 -- 2. Flag F10 ------------------------------------------------------------------
 insert into public.feature_flags (key, num, label, version, enabled)
 values ('kyc_publish_gate', 10, 'Verrou publication : conducteur vérifié obligatoire', 'v1.2.0', false)
 on conflict (key) do update
   set num = excluded.num, label = excluded.label, version = excluded.version;
--- (enabled volontairement non touché si la ligne existe)
 
--- Verrou serveur : impossible de publier un trajet si le flag est ON et que
--- le conducteur n'est pas vérifié (l'UI client affiche le même verrou).
 create or replace function public.enforce_kyc_publish_gate()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
@@ -48,8 +51,67 @@ create trigger trg_kyc_publish_gate
   before insert on public.trips
   for each row execute function public.enforce_kyc_publish_gate();
 
--- 3. RPC modération -------------------------------------------------------------
--- Liste tous les documents KYC (docs en attente d'abord). Vide si pas admin.
+-- 3. Durcissement kyc_documents ------------------------------------------------
+-- Un non-admin ne peut jamais fixer/altérer status, reviewed_at, reviewed_by.
+-- current_user = propriétaire de la fonction (postgres) quand admin_review_kyc
+-- (SECURITY DEFINER) écrit → ses décisions passent ; les écritures PostgREST
+-- normales tournent en role 'authenticated'/'anon' → gelées.
+create or replace function public.kyc_guard_and_reset()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  v_is_admin boolean := coalesce((select is_admin from profiles where id = auth.uid()), false);
+begin
+  if current_user in ('postgres', 'supabase_admin', 'service_role') or v_is_admin then
+    return new; -- décision admin / contexte privilégié : rien à forcer
+  end if;
+
+  if tg_op = 'INSERT' then
+    new.status := 'pending';
+    new.reviewed_at := null;
+    new.reviewed_by := null;
+  elsif tg_op = 'UPDATE' then
+    if new.file_path is distinct from old.file_path then
+      -- ré-upload d'un document → repasse en attente d'examen
+      new.status := 'pending';
+      new.reviewed_at := null;
+      new.reviewed_by := null;
+    else
+      -- toute autre modif par le propriétaire ne peut PAS toucher la modération
+      new.status := old.status;
+      new.reviewed_at := old.reviewed_at;
+      new.reviewed_by := old.reviewed_by;
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_kyc_guard on public.kyc_documents;
+create trigger trg_kyc_guard
+  before insert or update on public.kyc_documents
+  for each row execute function public.kyc_guard_and_reset();
+
+-- 4. Durcissement profiles : is_admin / is_verified inaltérables par le user ----
+create or replace function public.guard_profile_privileged_columns()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.is_admin is distinct from old.is_admin
+     or new.is_verified is distinct from old.is_verified then
+    if current_user not in ('postgres', 'supabase_admin', 'service_role')
+       and not coalesce((select is_admin from profiles where id = auth.uid()), false) then
+      raise exception 'forbidden: privileged column change';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_guard_profile_privileged on public.profiles;
+create trigger trg_guard_profile_privileged
+  before update on public.profiles
+  for each row execute function public.guard_profile_privileged_columns();
+
+-- 5. RPC modération -------------------------------------------------------------
 create or replace function public.admin_list_kyc()
 returns table (
   doc_id uuid,
@@ -74,22 +136,24 @@ $$;
 revoke all on function public.admin_list_kyc() from public, anon;
 grant execute on function public.admin_list_kyc() to authenticated;
 
--- Approuve/refuse un document puis recalcule le badge Vérifié du profil.
+-- Approuve/refuse un document (trace reviewed_by), puis recalcule le badge.
 create or replace function public.admin_review_kyc(p_doc_id uuid, p_approve boolean)
 returns json language plpgsql security definer set search_path = public as $$
 declare
+  v_admin uuid := auth.uid();
   v_profile uuid;
   v_role text;
   v_required text[];
   v_missing int;
 begin
-  if not coalesce((select is_admin from profiles where id = auth.uid()), false) then
+  if not coalesce((select is_admin from profiles where id = v_admin), false) then
     return json_build_object('ok', false, 'reason', 'not_admin');
   end if;
 
   update kyc_documents
      set status = case when p_approve then 'approved' else 'rejected' end,
-         reviewed_at = now()
+         reviewed_at = now(),
+         reviewed_by = v_admin
    where id = p_doc_id
    returning kyc_documents.profile_id into v_profile;
 
@@ -104,6 +168,7 @@ begin
     v_required := array['cin'];
   end if;
 
+  -- N'accepte QUE les documents validés par un admin (reviewed_by non null).
   select count(*) into v_missing
   from unnest(v_required) req
   where not exists (
@@ -111,6 +176,7 @@ begin
     where d.profile_id = v_profile
       and d.doc_type::text = req
       and d.status = 'approved'
+      and d.reviewed_by is not null
   );
 
   update profiles set is_verified = (v_missing = 0) where id = v_profile;
@@ -121,7 +187,7 @@ $$;
 revoke all on function public.admin_review_kyc(uuid, boolean) from public, anon;
 grant execute on function public.admin_review_kyc(uuid, boolean) to authenticated;
 
--- 4. Lecture storage pour l'admin ------------------------------------------------
+-- 6. Lecture storage pour l'admin ------------------------------------------------
 drop policy if exists "kyc admin select" on storage.objects;
 create policy "kyc admin select" on storage.objects for select
   using (

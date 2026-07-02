@@ -25,12 +25,15 @@ import { colors, radius } from '@/theme';
 
 type LatLng = { latitude: number; longitude: number };
 
+// On ne charge la vraie carte QUE hors Expo Go : dans un build EAS, la clé
+// Google Maps est injectée dans AndroidManifest.xml au build (app.json
+// android.config.googleMaps.apiKey) — elle n'est PAS lisible via
+// Constants.expoConfig au runtime, donc on ne peut pas s'appuyer dessus.
+// Expo Go (SDK 53+) ne fournit plus Google Maps → schéma de repli.
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
-const hasAndroidMapsKey =
-  Platform.OS !== 'android' || !!Constants.expoConfig?.android?.config?.googleMaps?.apiKey;
 
 let maps: typeof import('react-native-maps') | null = null;
-if (!isExpoGo && hasAndroidMapsKey) {
+if (!isExpoGo && Platform.OS !== 'web') {
   try {
     maps = require('react-native-maps') as typeof import('react-native-maps');
   } catch {

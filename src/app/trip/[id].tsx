@@ -28,14 +28,16 @@ export default function TripDetailScreen() {
 
   const isOwnTrip = !!user && !!trip && trip.driver.id === user.id;
 
-  // Une seule demande possible par trajet (contrainte unique en base) : si elle
-  // existe déjà, on affiche son état au lieu du bouton.
-  const { data: myBooking } = useMyBookingForTrip(
+  // Une seule demande ACTIVE possible par trajet. Une demande refusée/annulée
+  // peut être renvoyée (la RPC request_booking la réactive côté serveur).
+  const { data: myBooking, isLoading: bookingLoading } = useMyBookingForTrip(
     !isOwnTrip ? trip?.id : undefined,
     !isOwnTrip ? user?.id : undefined,
   );
+  const bookingIsActive = !!myBooking && (myBooking.status === 'pending' || myBooking.status === 'accepted' || myBooking.status === 'completed');
 
-  const canRequest = !!user && !!trip && !isOwnTrip && !myBooking && trip.seatsAvailable > 0;
+  const canRequest =
+    !!user && !!trip && !isOwnTrip && !bookingLoading && !bookingIsActive && trip.seatsAvailable > 0;
 
   // Temps réel (décision #11) : chacun peut partager SA position sur ce trajet.
   // Conducteur -> visible par les passagers acceptés (in-app).
@@ -76,7 +78,7 @@ export default function TripDetailScreen() {
   function onRequest() {
     if (!trip || !user) return;
     createBooking.mutate(
-      { tripId: trip.id, passengerId: user.id, seats: 1 },
+      { tripId: trip.id },
       {
         onSuccess: () => {
           Alert.alert(
@@ -85,24 +87,15 @@ export default function TripDetailScreen() {
             [{ text: 'OK', onPress: () => router.back() }],
           );
         },
-        onError: (e: unknown) => {
-          const code = (e as { code?: string | number })?.code;
-          Alert.alert(
-            'Demande impossible',
-            String(code) === '23505'
-              ? 'Tu as déjà envoyé une demande pour ce trajet — retrouve-la dans « Mes trajets ».'
-              : describeError(e),
-          );
-        },
+        onError: (e: unknown) => Alert.alert('Demande impossible', describeError(e)),
       },
     );
   }
 
-  const bookingStatusNotice: Record<string, string> = {
+  // Statuts ACTIFS → on affiche l'état. Refusé/annulé → on laisse re-demander.
+  const activeBookingNotice: Record<string, string> = {
     pending: `Demande envoyée ✓ — en attente de la réponse de ${trip?.driver.fullName ?? 'la conductrice'}.`,
     accepted: 'Demande acceptée ✓ — retrouve les détails dans « Mes trajets ».',
-    rejected: 'Ta demande pour ce trajet a été refusée.',
-    cancelled: 'Ta demande pour ce trajet a été annulée.',
     completed: 'Ce trajet est terminé.',
   };
 
@@ -295,21 +288,30 @@ export default function TripDetailScreen() {
               <Text variant="body" color={colors.textSecondary} center>
                 C'est ton propre trajet — gère les demandes reçues dans l'onglet « Mes trajets ».
               </Text>
-            ) : myBooking ? (
+            ) : bookingLoading ? (
+              <ActivityIndicator color={colors.primary} />
+            ) : bookingIsActive ? (
               <Text
                 variant="body"
-                color={myBooking.status === 'accepted' ? colors.success : colors.textSecondary}
+                color={myBooking?.status === 'accepted' ? colors.success : colors.textSecondary}
                 center
               >
-                {bookingStatusNotice[myBooking.status] ?? 'Demande déjà enregistrée pour ce trajet.'}
+                {activeBookingNotice[myBooking?.status ?? ''] ?? 'Demande déjà enregistrée pour ce trajet.'}
               </Text>
             ) : (
-              <Button
-                label="Demander à réserver"
-                onPress={onRequest}
-                disabled={!canRequest || createBooking.isPending}
-                loading={createBooking.isPending}
-              />
+              <>
+                {myBooking?.status === 'rejected' && (
+                  <Text variant="caption" color={colors.textSecondary} center style={{ marginBottom: spacing.sm }}>
+                    Ta demande précédente a été refusée — tu peux en renvoyer une.
+                  </Text>
+                )}
+                <Button
+                  label="Demander à réserver"
+                  onPress={onRequest}
+                  disabled={!canRequest || createBooking.isPending}
+                  loading={createBooking.isPending}
+                />
+              </>
             )}
           </View>
         </>

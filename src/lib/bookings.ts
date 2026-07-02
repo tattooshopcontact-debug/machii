@@ -16,22 +16,34 @@ export type BookingWithRelations = BookingRow & {
   passenger: ProfileRow | null;
 };
 
-/** Crée une demande de réservation pour le user courant. */
-async function createBooking(tripId: string, passengerId: string, seats = 1): Promise<BookingRow> {
-  const { data, error } = await supabase
-    .from('bookings')
-    .insert({ trip_id: tripId, passenger_id: passengerId, seats_booked: seats, status: 'pending' })
-    .select()
-    .single();
+/**
+ * Crée (ou réactive) une demande de réservation via la RPC serveur
+ * `request_booking` : gère atomiquement le premier envoi ET la re-demande
+ * après un refus/annulation (la contrainte unique trip+passager empêche un
+ * ré-INSERT côté client). Contrôles serveur : trajet ouvert, places dispo,
+ * pas son propre trajet.
+ */
+async function createBooking(tripId: string): Promise<void> {
+  const { data, error } = await supabase.rpc('request_booking', { p_trip_id: tripId });
   if (error) throw error;
-  return data;
+  const res = data as { ok: boolean; reason?: string } | null;
+  if (!res?.ok) {
+    const reasons: Record<string, string> = {
+      not_authenticated: 'Connecte-toi pour réserver.',
+      trip_not_found: 'Ce trajet n\'existe plus.',
+      own_trip: 'C\'est ton propre trajet.',
+      trip_unavailable: 'Ce trajet est complet ou n\'accepte plus de demandes.',
+      already_active: 'Tu as déjà une demande en cours pour ce trajet.',
+    };
+    throw new Error(reasons[res?.reason ?? ''] ?? 'Demande impossible.');
+  }
 }
 
 export function useCreateBooking() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ tripId, passengerId, seats }: { tripId: string; passengerId: string; seats?: number }) =>
-      createBooking(tripId, passengerId, seats),
+    mutationFn: ({ tripId }: { tripId: string; passengerId?: string; seats?: number }) =>
+      createBooking(tripId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['bookings'] });
       qc.invalidateQueries({ queryKey: ['trips'] });
