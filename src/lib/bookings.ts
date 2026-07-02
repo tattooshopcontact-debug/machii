@@ -40,6 +40,30 @@ export function useCreateBooking() {
 }
 
 /**
+ * Ma réservation éventuelle sur un trajet donné (une seule possible par la
+ * contrainte unique trip_id+passenger_id) — sert à l'état du bouton "Demander".
+ */
+async function fetchMyBookingForTrip(tripId: string, passengerId: string): Promise<BookingRow | null> {
+  const { data, error } = await supabase
+    .from('bookings')
+    .select('*')
+    .eq('trip_id', tripId)
+    .eq('passenger_id', passengerId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export function useMyBookingForTrip(tripId: string | undefined, passengerId: string | undefined) {
+  return useQuery({
+    queryKey: ['bookings', 'forTrip', tripId, passengerId],
+    queryFn: () => fetchMyBookingForTrip(tripId!, passengerId!),
+    enabled: !!tripId && !!passengerId,
+    staleTime: 15_000,
+  });
+}
+
+/**
  * Bookings où le user courant est le passager (demandes que j'ai faites).
  */
 async function fetchMyOutgoingBookings(passengerId: string): Promise<BookingWithRelations[]> {

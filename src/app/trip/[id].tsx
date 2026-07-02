@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconCar, IconClock, IconLock, IconStar } from '@/components/icons';
 import { TripMap } from '@/components/TripMap';
 import { Avatar, Badge, Button, Card, LegalBanner, RoutePoints, Screen, Text } from '@/components/ui';
-import { useCreateBooking } from '@/lib/bookings';
+import { useCreateBooking, useMyBookingForTrip } from '@/lib/bookings';
 import { describeError } from '@/lib/errors';
 import { useFeature } from '@/lib/featureFlags';
 import { formatDay, formatPrice, formatTime } from '@/lib/format';
@@ -27,7 +27,15 @@ export default function TripDetailScreen() {
   const createBooking = useCreateBooking();
 
   const isOwnTrip = !!user && !!trip && trip.driver.id === user.id;
-  const canRequest = !!user && !!trip && !isOwnTrip && trip.seatsAvailable > 0;
+
+  // Une seule demande possible par trajet (contrainte unique en base) : si elle
+  // existe déjà, on affiche son état au lieu du bouton.
+  const { data: myBooking } = useMyBookingForTrip(
+    !isOwnTrip ? trip?.id : undefined,
+    !isOwnTrip ? user?.id : undefined,
+  );
+
+  const canRequest = !!user && !!trip && !isOwnTrip && !myBooking && trip.seatsAvailable > 0;
 
   // Temps réel (décision #11) : chacun peut partager SA position sur ce trajet.
   // Conducteur -> visible par les passagers acceptés (in-app).
@@ -77,10 +85,26 @@ export default function TripDetailScreen() {
             [{ text: 'OK', onPress: () => router.back() }],
           );
         },
-        onError: (e: unknown) => Alert.alert('Demande impossible', describeError(e)),
+        onError: (e: unknown) => {
+          const code = (e as { code?: string | number })?.code;
+          Alert.alert(
+            'Demande impossible',
+            String(code) === '23505'
+              ? 'Tu as déjà envoyé une demande pour ce trajet — retrouve-la dans « Mes trajets ».'
+              : describeError(e),
+          );
+        },
       },
     );
   }
+
+  const bookingStatusNotice: Record<string, string> = {
+    pending: `Demande envoyée ✓ — en attente de la réponse de ${trip?.driver.fullName ?? 'la conductrice'}.`,
+    accepted: 'Demande acceptée ✓ — retrouve les détails dans « Mes trajets ».',
+    rejected: 'Ta demande pour ce trajet a été refusée.',
+    cancelled: 'Ta demande pour ce trajet a été annulée.',
+    completed: 'Ce trajet est terminé.',
+  };
 
   return (
     <View style={styles.root}>
@@ -270,6 +294,14 @@ export default function TripDetailScreen() {
             {isOwnTrip ? (
               <Text variant="body" color={colors.textSecondary} center>
                 C'est ton propre trajet — gère les demandes reçues dans l'onglet « Mes trajets ».
+              </Text>
+            ) : myBooking ? (
+              <Text
+                variant="body"
+                color={myBooking.status === 'accepted' ? colors.success : colors.textSecondary}
+                center
+              >
+                {bookingStatusNotice[myBooking.status] ?? 'Demande déjà enregistrée pour ce trajet.'}
               </Text>
             ) : (
               <Button

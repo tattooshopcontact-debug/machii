@@ -6,6 +6,8 @@ export function describeError(e: unknown): string {
   if (e instanceof Error) return e.message;
   if (typeof e === 'object' && e !== null) {
     const obj = e as { message?: string; error_description?: string; details?: string; hint?: string; code?: string | number };
+    // Codes Postgres courants → messages compréhensibles (jamais de jargon SQL à l'écran).
+    if (String(obj.code) === '23505') return 'Cette action a déjà été enregistrée.';
     const main = obj.message || obj.error_description || obj.details || obj.hint;
     if (main) return obj.code ? `${main} (code ${obj.code})` : main;
     try {
