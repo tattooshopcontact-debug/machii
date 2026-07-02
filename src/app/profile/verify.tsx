@@ -75,6 +75,7 @@ export default function VerifyScreen() {
   const uploadKyc = useUploadKyc();
   const [uploading, setUploading] = useState<KycDocType | null>(null);
   const [autoLoading, setAutoLoading] = useState(false);
+  const [showManual, setShowManual] = useState(false);
   const autoVerifyEnabled = useFeature('auto_verify');
 
   // À l'ouverture de l'écran : si une vérification Didit récente a été approuvée
@@ -157,92 +158,115 @@ export default function VerifyScreen() {
       </View>
 
       <Screen contentStyle={{ gap: spacing.md, paddingTop: spacing.lg }}>
-        <Card style={{ gap: spacing.sm }}>
-          <Text variant="heading">Devenir un utilisateur vérifié</Text>
-          <Text variant="body" color={colors.textSecondary}>
-            Envoie tes documents officiels pour obtenir le badge {' '}
-            <Text variant="body" color={colors.primary}>« Vérifié »</Text>. Les utilisateurs vérifiés gagnent la confiance des autres et leurs trajets sont mis en avant.
-          </Text>
-          <View style={styles.note}>
-            <Ionicons name="lock-closed-outline" size={16} color={colors.textSecondary} />
-            <Text variant="caption" color={colors.textSecondary} style={{ flex: 1 }}>
-              Tes documents sont stockés de manière privée. Seul toi peux les voir, et Machii les examine pour validation.
-            </Text>
-          </View>
-        </Card>
-
-        {autoVerifyEnabled && (
-          <Card style={{ gap: spacing.sm, borderWidth: 1, borderColor: colors.accent }}>
-            <View style={styles.docHeader}>
-              <View style={styles.docIcon}>
-                <Ionicons name="flash" size={20} color={colors.primary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text variant="bodyMedium">Vérification automatique (recommandé)</Text>
-                <Text variant="caption" color={colors.textSecondary}>
-                  Scanne ta CIN et prends un selfie : ton badge « Vérifié » s'active en quelques minutes, sans attendre.
-                </Text>
-              </View>
+        {/* ── Héros : vérification automatique ── */}
+        {autoVerifyEnabled ? (
+          <Card style={styles.hero}>
+            <View style={styles.heroIcon}>
+              <Ionicons name="shield-checkmark" size={28} color={colors.primary} />
             </View>
+            <Text variant="heading" center>Vérifie ton identité</Text>
+            <Text variant="body" color={colors.textSecondary} center>
+              {isDriverRole
+                ? 'Scanne ta CIN et prends un selfie. Ton badge « Vérifié » s\'active en quelques minutes.'
+                : 'Une CIN et un selfie suffisent. Ton badge « Vérifié » s\'active en quelques minutes.'}
+            </Text>
             <Button
-              label={autoLoading ? 'Ouverture…' : 'Vérifier mon identité maintenant'}
+              label={autoLoading ? 'Ouverture…' : 'Vérifier mon identité'}
               onPress={onAutoVerify}
               disabled={autoLoading}
               loading={autoLoading}
-              left={<Ionicons name="shield-checkmark" size={18} color={colors.textOnPrimary} />}
+              left={<Ionicons name="flash" size={18} color={colors.textOnPrimary} />}
+              style={{ marginTop: spacing.xs, alignSelf: 'stretch' }}
             />
-            <Text variant="caption" color={colors.textSecondary} center>
-              — ou envoie tes documents manuellement ci-dessous —
+            <View style={styles.heroReassure}>
+              <Ionicons name="lock-closed-outline" size={13} color={colors.textSecondary} />
+              <Text variant="caption" color={colors.textSecondary}>
+                Rapide, chiffré et confidentiel
+              </Text>
+            </View>
+          </Card>
+        ) : (
+          <Card style={{ gap: spacing.sm }}>
+            <Text variant="heading">Devenir un utilisateur vérifié</Text>
+            <Text variant="body" color={colors.textSecondary}>
+              Envoie tes documents officiels pour obtenir le badge{' '}
+              <Text variant="body" color={colors.primary}>« Vérifié »</Text>.
             </Text>
           </Card>
         )}
 
-        {isLoading && (
-          <View style={{ paddingVertical: spacing.lg, alignItems: 'center' }}>
-            <ActivityIndicator color={colors.primary} />
-          </View>
+        {/* ── Manuel : discret, replié par défaut quand l'auto est dispo ── */}
+        {autoVerifyEnabled && (
+          <Pressable style={styles.manualToggle} onPress={() => setShowManual((v) => !v)}>
+            <Text variant="caption" color={colors.textSecondary}>
+              Je préfère envoyer mes documents manuellement
+            </Text>
+            <Ionicons
+              name={showManual ? 'chevron-up' : 'chevron-down'}
+              size={16}
+              color={colors.textSecondary}
+            />
+          </Pressable>
         )}
 
-        {!isLoading && docsToShow.map((doc) => {
-          const existing = (docs ?? []).find((d) => d.docType === doc.type);
-          const isUploading = uploading === doc.type;
-          return (
-            <Card key={doc.type} style={{ gap: spacing.sm }}>
-              <View style={styles.docHeader}>
-                <View style={styles.docIcon}>
-                  <Ionicons name={doc.icon} size={20} color={colors.primary} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text variant="bodyMedium">{doc.label}</Text>
-                  <Text variant="caption" color={colors.textSecondary}>
-                    {doc.description}
-                  </Text>
-                </View>
-                {statusBadge(existing?.status ?? null)}
+        {(showManual || !autoVerifyEnabled) && (
+          <>
+            {isLoading && (
+              <View style={{ paddingVertical: spacing.lg, alignItems: 'center' }}>
+                <ActivityIndicator color={colors.primary} />
               </View>
-              <Button
-                variant={existing ? 'outline' : 'primary'}
-                label={
-                  isUploading
-                    ? 'Envoi…'
-                    : doc.selfie
-                      ? existing ? 'Reprendre le selfie' : 'Prendre un selfie'
-                      : existing ? 'Remplacer la photo' : 'Choisir une photo'
-                }
-                onPress={() => onUpload(doc.type, doc.selfie)}
-                disabled={isUploading}
-                loading={isUploading}
-                left={
-                  <Ionicons
-                    name={doc.selfie ? 'camera-outline' : 'cloud-upload-outline'}
-                    size={18}
-                    color={existing ? colors.primary : colors.textOnPrimary}
+            )}
+
+            {!isLoading && docsToShow.map((doc) => {
+              const existing = (docs ?? []).find((d) => d.docType === doc.type);
+              const isUploading = uploading === doc.type;
+              return (
+                <Card key={doc.type} style={{ gap: spacing.sm }}>
+                  <View style={styles.docHeader}>
+                    <View style={styles.docIcon}>
+                      <Ionicons name={doc.icon} size={20} color={colors.primary} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text variant="bodyMedium">{doc.label}</Text>
+                      <Text variant="caption" color={colors.textSecondary}>
+                        {doc.description}
+                      </Text>
+                    </View>
+                    {statusBadge(existing?.status ?? null)}
+                  </View>
+                  <Button
+                    variant={existing ? 'outline' : 'primary'}
+                    label={
+                      isUploading
+                        ? 'Envoi…'
+                        : doc.selfie
+                          ? existing ? 'Reprendre le selfie' : 'Prendre un selfie'
+                          : existing ? 'Remplacer la photo' : 'Choisir une photo'
+                    }
+                    onPress={() => onUpload(doc.type, doc.selfie)}
+                    disabled={isUploading}
+                    loading={isUploading}
+                    left={
+                      <Ionicons
+                        name={doc.selfie ? 'camera-outline' : 'cloud-upload-outline'}
+                        size={18}
+                        color={existing ? colors.primary : colors.textOnPrimary}
+                      />
+                    }
                   />
-                }
-              />
-            </Card>
-          );
-        })}
+                </Card>
+              );
+            })}
+            {!isLoading && !isDriverRole && (
+              <View style={styles.note}>
+                <Ionicons name="information-circle-outline" size={16} color={colors.textSecondary} />
+                <Text variant="caption" color={colors.textSecondary} style={{ flex: 1 }}>
+                  En tant que passager, seule ton identité (CIN + selfie) est nécessaire.
+                </Text>
+              </View>
+            )}
+          </>
+        )}
       </Screen>
     </View>
   );
@@ -259,6 +283,36 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
     borderBottomLeftRadius: radius.xl,
     borderBottomRightRadius: radius.xl,
+  },
+  hero: {
+    gap: spacing.sm,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.accent,
+    backgroundColor: 'rgba(255,199,44,0.06)',
+    paddingVertical: spacing.lg,
+  },
+  heroIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xs,
+  },
+  heroReassure: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: spacing.xs,
+  },
+  manualToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: spacing.sm,
   },
   docHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   docIcon: {
