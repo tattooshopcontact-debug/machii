@@ -34,6 +34,8 @@ async function createBooking(tripId: string): Promise<void> {
       own_trip: 'C\'est ton propre trajet.',
       trip_unavailable: 'Ce trajet est complet ou n\'accepte plus de demandes.',
       already_active: 'Tu as déjà une demande en cours pour ce trajet.',
+      women_only: 'Ce trajet est réservé aux femmes.',
+      men_only: 'Ce trajet est réservé aux hommes.',
     };
     throw new Error(reasons[res?.reason ?? ''] ?? 'Demande impossible.');
   }

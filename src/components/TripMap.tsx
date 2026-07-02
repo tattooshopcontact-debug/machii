@@ -10,10 +10,12 @@
  *
  * ⚠️ react-native-maps est chargé PARESSEUSEMENT (même leçon qu'expo-notifications) :
  * - Expo Go (SDK 53+) ne fournit plus Google Maps → l'import module-level
- *   ferait crasher tout l'écran de détail du trajet.
- * - Un build Android SANS clé API Google Maps crashe NATIVEMENT à l'affichage
- *   de la MapView (impossible à try/catch en JS) → on vérifie la clé avant.
- * Dans ces cas on affiche le schéma du trajet (TripMapSchematic) à la place.
+ *   ferait crasher tout l'écran de détail du trajet → schéma de repli.
+ * - En build EAS/standalone, la clé Google Maps est injectée dans le manifest
+ *   natif au build (app.json android.config.googleMaps.apiKey) ; elle n'est PAS
+ *   lisible via Constants.expoConfig au runtime, donc on ne gate PAS dessus.
+ *   La vraie MapView s'affiche. Garde-fou implicite : ne jamais retirer la clé
+ *   de app.json (sinon la MapView crasherait nativement, non catchable en JS).
  */
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform, StyleSheet, View } from 'react-native';

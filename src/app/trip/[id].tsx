@@ -300,9 +300,11 @@ export default function TripDetailScreen() {
               </Text>
             ) : (
               <>
-                {myBooking?.status === 'rejected' && (
+                {(myBooking?.status === 'rejected' || myBooking?.status === 'cancelled') && (
                   <Text variant="caption" color={colors.textSecondary} center style={{ marginBottom: spacing.sm }}>
-                    Ta demande précédente a été refusée — tu peux en renvoyer une.
+                    {myBooking?.status === 'rejected'
+                      ? 'Ta demande précédente a été refusée — tu peux en renvoyer une.'
+                      : 'Tu avais annulé ta demande — tu peux en renvoyer une.'}
                   </Text>
                 )}
                 <Button

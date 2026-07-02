@@ -53,11 +53,13 @@ create trigger trg_kyc_publish_gate
 
 -- 3. Durcissement kyc_documents ------------------------------------------------
 -- Un non-admin ne peut jamais fixer/altérer status, reviewed_at, reviewed_by.
--- current_user = propriétaire de la fonction (postgres) quand admin_review_kyc
--- (SECURITY DEFINER) écrit → ses décisions passent ; les écritures PostgREST
--- normales tournent en role 'authenticated'/'anon' → gelées.
+-- ⚠️ IMPÉRATIF : trigger en SECURITY INVOKER (défaut) — en DEFINER, current_user
+-- vaudrait TOUJOURS le propriétaire (postgres) et le gel ne s'appliquerait
+-- jamais. En INVOKER, current_user = rôle appelant réel : 'authenticated' via
+-- PostgREST (gelé) ; 'postgres' quand admin_review_kyc (SECURITY DEFINER) écrit
+-- (laissé passer). C'est ce qui rend le durcissement effectif.
 create or replace function public.kyc_guard_and_reset()
-returns trigger language plpgsql security definer set search_path = public as $$
+returns trigger language plpgsql set search_path = public as $$
 declare
   v_is_admin boolean := coalesce((select is_admin from profiles where id = auth.uid()), false);
 begin
@@ -92,8 +94,9 @@ create trigger trg_kyc_guard
   for each row execute function public.kyc_guard_and_reset();
 
 -- 4. Durcissement profiles : is_admin / is_verified inaltérables par le user ----
+-- Même impératif : SECURITY INVOKER pour que current_user reflète l'appelant.
 create or replace function public.guard_profile_privileged_columns()
-returns trigger language plpgsql security definer set search_path = public as $$
+returns trigger language plpgsql set search_path = public as $$
 begin
   if new.is_admin is distinct from old.is_admin
      or new.is_verified is distinct from old.is_verified then
@@ -168,15 +171,16 @@ begin
     v_required := array['cin'];
   end if;
 
-  -- N'accepte QUE les documents validés par un admin (reviewed_by non null).
+  -- N'accepte QUE les documents validés par un VRAI admin (défense en
+  -- profondeur : reviewed_by doit pointer vers un profil is_admin).
   select count(*) into v_missing
   from unnest(v_required) req
   where not exists (
     select 1 from kyc_documents d
+    join profiles a on a.id = d.reviewed_by and a.is_admin
     where d.profile_id = v_profile
       and d.doc_type::text = req
       and d.status = 'approved'
-      and d.reviewed_by is not null
   );
 
   update profiles set is_verified = (v_missing = 0) where id = v_profile;

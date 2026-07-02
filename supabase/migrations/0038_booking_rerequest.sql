@@ -23,6 +23,7 @@ declare
   v_uid uuid := auth.uid();
   v_trip public.trips%rowtype;
   v_existing public.bookings%rowtype;
+  v_gender text;
 begin
   if v_uid is null then
     return json_build_object('ok', false, 'reason', 'not_authenticated');
@@ -37,6 +38,18 @@ begin
   end if;
   if v_trip.status <> 'open' or coalesce(v_trip.seats_available, 0) < 1 then
     return json_build_object('ok', false, 'reason', 'trip_unavailable');
+  end if;
+
+  -- Garde-fou genre appliqué ICI sur les DEUX chemins (les triggers women/men
+  -- only ne couvrent que l'INSERT ; la réactivation par UPDATE les contournerait).
+  if coalesce(v_trip.women_only, false) or coalesce(v_trip.men_only, false) then
+    select gender into v_gender from public.profiles where id = v_uid;
+    if coalesce(v_trip.women_only, false) and v_gender is distinct from 'female' then
+      return json_build_object('ok', false, 'reason', 'women_only');
+    end if;
+    if coalesce(v_trip.men_only, false) and v_gender is distinct from 'male' then
+      return json_build_object('ok', false, 'reason', 'men_only');
+    end if;
   end if;
 
   select * into v_existing
