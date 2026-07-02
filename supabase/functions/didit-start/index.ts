@@ -26,7 +26,9 @@ Deno.serve(async (req) => {
     const user = await ur.json();
     if (!user?.id) return json({ error: 'not_authenticated' }, 401);
 
-    const callback = `${SUPABASE_URL}/functions/v1/didit-webhook`;
+    // ⚠️ `callback` = URL où Didit RENVOIE L'UTILISATEUR à la fin (pas le webhook !).
+    // On l'envoie sur notre page de retour, qui rouvre l'app (deep link) + bouton.
+    const callback = `${SUPABASE_URL}/functions/v1/didit-return`;
 
     const resp = await fetch('https://verification.didit.me/v3/session/', {
       method: 'POST',
@@ -35,8 +37,7 @@ Deno.serve(async (req) => {
         workflow_id: WORKFLOW_ID,
         vendor_data: user.id,
         callback,
-        // Renvoie l'utilisateur vers l'app à la fin (évite la page blanche).
-        redirect_url: 'machii://profile/verify',
+        callback_method: 'both',
       }),
     });
     const session = await resp.json();
