@@ -179,15 +179,27 @@ export async function startAutoVerification(): Promise<string> {
   return url;
 }
 
+/** État de vérification affiché à l'utilisateur. */
+export type VerifState = 'idle' | 'pending' | 'verified' | 'declined';
+
+export type VerifResult = { verified: boolean; state: VerifState; rawStatus: string };
+
 /**
  * Vérifie ACTIVEMENT le résultat de la dernière session Didit (sans dépendre du
- * webhook) et met à jour is_verified côté serveur. Renvoie true si vérifié.
- * Appelé au retour du navigateur de vérification.
+ * webhook) et met à jour is_verified côté serveur. Renvoie l'état à afficher.
+ * Appelé à l'ouverture de l'écran et au retour du navigateur.
  */
-export async function checkAutoVerification(): Promise<boolean> {
+export async function checkAutoVerification(): Promise<VerifResult> {
   const { data, error } = await supabase.functions.invoke('didit-check', { body: {} });
-  if (error) return false;
-  return !!(data as { verified?: boolean } | null)?.verified;
+  if (error) return { verified: false, state: 'idle', rawStatus: 'error' };
+  const d = (data as { verified?: boolean; status?: string } | null) ?? {};
+  const raw = d.status ?? 'none';
+  let state: VerifState = 'idle';
+  if (d.verified || raw === 'Approved') state = 'verified';
+  else if (raw === 'In Progress' || raw === 'In Review') state = 'pending';
+  else if (raw === 'Declined') state = 'declined';
+  // 'Not Started' / 'Abandoned' / 'Expired' / 'none' → idle (on peut (re)lancer)
+  return { verified: state === 'verified', state, rawStatus: raw };
 }
 
 // ---------------------------------------------------------------------------

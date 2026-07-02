@@ -31,7 +31,13 @@ Deno.serve(async (req) => {
     const resp = await fetch('https://verification.didit.me/v3/session/', {
       method: 'POST',
       headers: { 'x-api-key': DIDIT_API_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ workflow_id: WORKFLOW_ID, vendor_data: user.id, callback }),
+      body: JSON.stringify({
+        workflow_id: WORKFLOW_ID,
+        vendor_data: user.id,
+        callback,
+        // Renvoie l'utilisateur vers l'app à la fin (évite la page blanche).
+        redirect_url: 'machii://profile/verify',
+      }),
     });
     const session = await resp.json();
     if (!resp.ok) return json({ error: 'didit_error', detail: session }, 502);

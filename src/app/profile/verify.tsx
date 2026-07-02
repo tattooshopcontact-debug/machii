@@ -8,7 +8,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { Badge, Button, Card, Screen, Text } from '@/components/ui';
 import { useFeature } from '@/lib/featureFlags';
 import { describeError } from '@/lib/errors';
-import { pickKycImage, pickKycSelfie, startAutoVerification, checkAutoVerification, useMyKyc, useUploadKyc, type KycDocType, type KycStatus } from '@/lib/kyc';
+import { pickKycImage, pickKycSelfie, startAutoVerification, checkAutoVerification, useMyKyc, useUploadKyc, type KycDocType, type KycStatus, type VerifState } from '@/lib/kyc';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, radius, spacing } from '@/theme';
 
@@ -76,15 +76,24 @@ export default function VerifyScreen() {
   const [uploading, setUploading] = useState<KycDocType | null>(null);
   const [autoLoading, setAutoLoading] = useState(false);
   const [showManual, setShowManual] = useState(false);
+  const [verifState, setVerifState] = useState<VerifState>(
+    user?.isVerified ? 'verified' : 'idle',
+  );
   const autoVerifyEnabled = useFeature('auto_verify');
 
-  // À l'ouverture de l'écran : si une vérification Didit récente a été approuvée
-  // (webhook non garanti), on rattrape le badge tout seul.
+  // Interroge Didit et met à jour l'état affiché (+ rafraîchit le badge si validé).
+  async function refreshStatus() {
+    if (!autoVerifyEnabled || !user) return;
+    const res = await checkAutoVerification();
+    setVerifState(res.state);
+    if (res.verified && !user.isVerified) await loadSession();
+  }
+
+  // À l'ouverture de l'écran : rattrape l'état réel (page blanche Didit → au
+  // retour, l'écran affiche « en cours / vérifié / refusé »).
   useEffect(() => {
-    if (!autoVerifyEnabled || !user || user.isVerified) return;
-    (async () => {
-      if (await checkAutoVerification()) await loadSession();
-    })();
+    if (user?.isVerified) { setVerifState('verified'); return; }
+    refreshStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoVerifyEnabled]);
 
@@ -109,23 +118,27 @@ export default function VerifyScreen() {
     setAutoLoading(true);
     try {
       const url = await startAutoVerification();
-      // Le navigateur se ferme au retour de l'utilisateur → on vérifie le résultat.
-      await WebBrowser.openBrowserAsync(url);
-      const verified = await checkAutoVerification();
-      if (verified) {
-        await loadSession(); // rafraîchit le badge « Vérifié » dans le profil
+      setVerifState('pending'); // dès qu'on lance, l'écran passe en « en cours »
+      // openAuthSession referme le navigateur automatiquement si Didit redirige
+      // vers machii:// à la fin (évite la page blanche). Sinon, l'utilisateur
+      // revient manuellement et l'écran affiche le statut.
+      await WebBrowser.openAuthSessionAsync(url, 'machii://profile/verify');
+      // Au retour : on interroge Didit plusieurs fois (finalisation ~quelques s).
+      const res = await checkAutoVerification();
+      setVerifState(res.state);
+      if (res.verified) {
+        await loadSession();
         Alert.alert('Identité vérifiée ✓', 'Ton badge « Vérifié » est maintenant actif. Merci !');
+      } else if (res.state === 'declined') {
+        Alert.alert('Vérification refusée', 'Tes documents n\'ont pas pu être validés. Tu peux réessayer.');
       } else {
-        // Laisse une 2ᵉ chance : Didit peut mettre quelques secondes à finaliser.
-        setTimeout(async () => {
-          if (await checkAutoVerification()) await loadSession();
-        }, 6000);
-        Alert.alert(
-          'Vérification en cours',
-          "Si tu as terminé, ton badge « Vérifié » s'activera dans quelques instants. Tu peux rouvrir cette page pour vérifier.",
+        // en cours : on repolle en arrière-plan pour rattraper l'approbation
+        [4000, 9000, 15000].forEach((ms) =>
+          setTimeout(() => refreshStatus(), ms),
         );
       }
     } catch (e) {
+      setVerifState('idle');
       Alert.alert('Vérification impossible', describeError(e));
     } finally {
       setAutoLoading(false);
@@ -158,33 +171,70 @@ export default function VerifyScreen() {
       </View>
 
       <Screen contentStyle={{ gap: spacing.md, paddingTop: spacing.lg }}>
-        {/* ── Héros : vérification automatique ── */}
+        {/* ── Héros : vérification automatique (avec statut) ── */}
         {autoVerifyEnabled ? (
-          <Card style={styles.hero}>
-            <View style={styles.heroIcon}>
-              <Ionicons name="shield-checkmark" size={28} color={colors.primary} />
-            </View>
-            <Text variant="heading" center>Vérifie ton identité</Text>
-            <Text variant="body" color={colors.textSecondary} center>
-              {isDriverRole
-                ? 'Scanne ta CIN et prends un selfie. Ton badge « Vérifié » s\'active en quelques minutes.'
-                : 'Une CIN et un selfie suffisent. Ton badge « Vérifié » s\'active en quelques minutes.'}
-            </Text>
-            <Button
-              label={autoLoading ? 'Ouverture…' : 'Vérifier mon identité'}
-              onPress={onAutoVerify}
-              disabled={autoLoading}
-              loading={autoLoading}
-              left={<Ionicons name="flash" size={18} color={colors.textOnPrimary} />}
-              style={{ marginTop: spacing.xs, alignSelf: 'stretch' }}
-            />
-            <View style={styles.heroReassure}>
-              <Ionicons name="lock-closed-outline" size={13} color={colors.textSecondary} />
-              <Text variant="caption" color={colors.textSecondary}>
-                Rapide, chiffré et confidentiel
+          verifState === 'verified' ? (
+            <Card style={StyleSheet.flatten([styles.hero, { borderColor: colors.success, backgroundColor: 'rgba(40,167,69,0.06)' }])}>
+              <View style={StyleSheet.flatten([styles.heroIcon, { backgroundColor: 'rgba(40,167,69,0.12)' }])}>
+                <Ionicons name="checkmark-circle" size={30} color={colors.success} />
+              </View>
+              <Text variant="heading" center>Identité vérifiée</Text>
+              <Text variant="body" color={colors.textSecondary} center>
+                Ton badge « Vérifié » est actif. Les autres utilisateurs te font davantage confiance.
               </Text>
-            </View>
-          </Card>
+            </Card>
+          ) : verifState === 'pending' ? (
+            <Card style={styles.hero}>
+              <View style={styles.heroIcon}>
+                <ActivityIndicator color={colors.primary} />
+              </View>
+              <Text variant="heading" center>Vérification en cours…</Text>
+              <Text variant="body" color={colors.textSecondary} center>
+                On valide tes documents. Ton badge « Vérifié » s'activera dans quelques instants.
+              </Text>
+              <Button
+                label="Actualiser"
+                variant="outline"
+                onPress={refreshStatus}
+                left={<Ionicons name="refresh" size={18} color={colors.primary} />}
+                style={{ marginTop: spacing.xs, alignSelf: 'stretch' }}
+              />
+            </Card>
+          ) : (
+            <Card style={styles.hero}>
+              <View style={styles.heroIcon}>
+                <Ionicons
+                  name={verifState === 'declined' ? 'close-circle' : 'shield-checkmark'}
+                  size={28}
+                  color={verifState === 'declined' ? colors.danger : colors.primary}
+                />
+              </View>
+              <Text variant="heading" center>
+                {verifState === 'declined' ? 'Vérification refusée' : 'Vérifie ton identité'}
+              </Text>
+              <Text variant="body" color={colors.textSecondary} center>
+                {verifState === 'declined'
+                  ? 'Tes documents n\'ont pas pu être validés. Vérifie que ta CIN est nette et réessaie.'
+                  : isDriverRole
+                    ? 'Scanne ta CIN et prends un selfie. Ton badge « Vérifié » s\'active en quelques minutes.'
+                    : 'Une CIN et un selfie suffisent. Ton badge « Vérifié » s\'active en quelques minutes.'}
+              </Text>
+              <Button
+                label={autoLoading ? 'Ouverture…' : verifState === 'declined' ? 'Réessayer' : 'Vérifier mon identité'}
+                onPress={onAutoVerify}
+                disabled={autoLoading}
+                loading={autoLoading}
+                left={<Ionicons name="flash" size={18} color={colors.textOnPrimary} />}
+                style={{ marginTop: spacing.xs, alignSelf: 'stretch' }}
+              />
+              <View style={styles.heroReassure}>
+                <Ionicons name="lock-closed-outline" size={13} color={colors.textSecondary} />
+                <Text variant="caption" color={colors.textSecondary}>
+                  Rapide, chiffré et confidentiel
+                </Text>
+              </View>
+            </Card>
+          )
         ) : (
           <Card style={{ gap: spacing.sm }}>
             <Text variant="heading">Devenir un utilisateur vérifié</Text>
