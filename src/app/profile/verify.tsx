@@ -119,10 +119,11 @@ export default function VerifyScreen() {
     try {
       const url = await startAutoVerification();
       setVerifState('pending'); // dès qu'on lance, l'écran passe en « en cours »
-      // openAuthSession referme le navigateur automatiquement si Didit redirige
-      // vers machii:// à la fin (évite la page blanche). Sinon, l'utilisateur
-      // revient manuellement et l'écran affiche le statut.
-      await WebBrowser.openAuthSessionAsync(url, 'machii://profile/verify');
+      // Didit renvoie vers https://machii.net/verif-retour à la fin. openAuthSession
+      // intercepte cette URL EN INTERNE et referme le navigateur → retour DIRECT
+      // dans l'app, sans page blanche NI popup (le lien vérifié Android couvre
+      // aussi le cas du scan depuis un autre appareil).
+      await WebBrowser.openAuthSessionAsync(url, 'https://machii.net/verif-retour');
       // Au retour : on interroge Didit plusieurs fois (finalisation ~quelques s).
       const res = await checkAutoVerification();
       setVerifState(res.state);

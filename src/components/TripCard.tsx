@@ -50,6 +50,7 @@ export function TripCard({ trip, onPress, asMatch = false }: TripCardProps) {
                 </Text>
               </>
             )}
+            {!trip.driver.isVerified && <Badge label="Non vérifié" tone="unverified" icon="!" />}
           </View>
         </View>
         <View style={styles.priceCol}>

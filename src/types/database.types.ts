@@ -364,6 +364,7 @@ export type Database = {
           cleanliness: number | null;
           driving: number | null;
           friendliness: number | null;
+          comment: string | null;
           created_at: string;
         };
         Insert: {
@@ -375,6 +376,7 @@ export type Database = {
           cleanliness?: number | null;
           driving?: number | null;
           friendliness?: number | null;
+          comment?: string | null;
         };
         Update: Partial<Database['public']['Tables']['ratings']['Insert']>;
         Relationships: [];

@@ -9,3 +9,4 @@ export { Screen } from './Screen';
 export { ScreenHeader } from './ScreenHeader';
 export { RatingBar, Stars } from './Stars';
 export { Text } from './Text';
+export { VerifiedShield, ShieldIcon } from './VerifiedShield';

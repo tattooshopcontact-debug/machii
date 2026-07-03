@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconCar, IconClock, IconLock, IconStar } from '@/components/icons';
 import { TripMap } from '@/components/TripMap';
-import { Avatar, Badge, Button, Card, LegalBanner, RoutePoints, Screen, Text } from '@/components/ui';
+import { Avatar, Badge, Button, Card, LegalBanner, RoutePoints, Screen, Text, VerifiedShield } from '@/components/ui';
 import { useCreateBooking, useMyBookingForTrip } from '@/lib/bookings';
 import { describeError } from '@/lib/errors';
 import { useFeature } from '@/lib/featureFlags';
@@ -133,25 +133,32 @@ export default function TripDetailScreen() {
       {trip && (
         <>
           <Screen contentStyle={{ gap: spacing.md, paddingTop: spacing.lg }}>
-            <Card style={styles.driver}>
-              <Avatar
-                name={trip.driver.fullName}
-                uri={trip.driver.avatarUrl ?? undefined}
-                tint={trip.driver.avatarTint}
-                size={56}
-                verified={trip.driver.isVerified}
-              />
-              <View style={{ flex: 1 }}>
-                <Text variant="subtitle">{trip.driver.fullName}</Text>
-                <View style={styles.metaRow}>
-                  <IconStar size={15} />
-                  <Text variant="caption">
-                    {trip.driver.isNew ? 'Nouveau' : `${trip.driver.ratingAvg.toFixed(1)} · ${trip.driver.tripCount} trajets`}
-                  </Text>
+            <Pressable onPress={() => router.push(`/user/${trip.driver.id}` as Href)}>
+              <Card style={styles.driver}>
+                <Avatar
+                  name={trip.driver.fullName}
+                  uri={trip.driver.avatarUrl ?? undefined}
+                  tint={trip.driver.avatarTint}
+                  size={56}
+                  verified={trip.driver.isVerified}
+                />
+                <View style={{ flex: 1, gap: 4 }}>
+                  <Text variant="subtitle">{trip.driver.fullName}</Text>
+                  <View style={styles.metaRow}>
+                    <IconStar size={15} />
+                    <Text variant="caption">
+                      {trip.driver.isNew ? 'Nouveau' : `${trip.driver.ratingAvg.toFixed(1)} · ${trip.driver.tripCount} trajets`}
+                    </Text>
+                  </View>
+                  {trip.driver.isVerified ? (
+                    <VerifiedShield />
+                  ) : (
+                    <Badge label="Profil non vérifié" tone="unverified" icon="!" />
+                  )}
                 </View>
-              </View>
-              {trip.driver.isVerified && <Badge label="Vérifié" tone="verified" icon="✓" />}
-            </Card>
+                <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+              </Card>
+            </Pressable>
 
             {mapEnabled && (
               <TripMap

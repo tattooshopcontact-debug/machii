@@ -4,11 +4,12 @@ import { colors, fonts, fontSize, radius, spacing } from '@/theme';
 
 import { Text } from './Text';
 
-type Tone = 'free' | 'verified' | 'new' | 'negotiable' | 'recurring' | 'punctual' | 'danger' | 'neutral';
+type Tone = 'free' | 'verified' | 'unverified' | 'new' | 'negotiable' | 'recurring' | 'punctual' | 'danger' | 'neutral';
 
 const tones: Record<Tone, { bg: string; fg: string }> = {
   free: { bg: colors.accent, fg: colors.primary },
   verified: { bg: 'rgba(74, 222, 128, 0.18)', fg: '#15803D' },
+  unverified: { bg: 'rgba(180, 83, 9, 0.10)', fg: '#B45309' },
   new: { bg: 'rgba(241, 138, 77, 0.18)', fg: '#C2510A' },
   negotiable: { bg: '#EFEAE1', fg: colors.textSecondary },
   recurring: { bg: 'rgba(27, 61, 110, 0.10)', fg: colors.primary },

@@ -5,6 +5,9 @@
  * avatarTint…) n'existent pas encore en DB. On les remplit avec des valeurs neutres,
  * à étoffer dans les prochaines versions.
  */
+import { useQuery } from '@tanstack/react-query';
+
+import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database.types';
 import type { UserProfile } from '@/types/models';
 
@@ -43,4 +46,19 @@ export function mapProfileFromDb(row: ProfileRow): UserProfile {
     achievements: [],
     tags: row.tags ?? [],
   };
+}
+
+/** Profil public d'un autre utilisateur (lecture seule, pour l'écran /user/[id]). */
+export function usePublicProfile(id?: string) {
+  return useQuery({
+    queryKey: ['publicProfile', id],
+    enabled: !!id,
+    staleTime: 60_000,
+    queryFn: async (): Promise<UserProfile & { createdAt: string | null }> => {
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', id!).maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error('Profil introuvable');
+      return { ...mapProfileFromDb(data as ProfileRow), createdAt: (data as ProfileRow).created_at ?? null };
+    },
+  });
 }

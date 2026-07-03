@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Avatar, Badge, Button, Card, Screen, ScreenHeader, Text } from '@/components/ui';
+import { Avatar, Badge, Button, Card, Screen, ScreenHeader, Text, VerifiedShield } from '@/components/ui';
 import { useFeature } from '@/lib/featureFlags';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, radius, spacing } from '@/theme';
@@ -59,7 +59,11 @@ export default function ProfileScreen() {
           </Text>
           <View style={styles.metaRow}>
             <Badge label={ROLE_LABEL[user.role]} tone="recurring" />
-            {!user.isVerified && <Text variant="caption" color={colors.textSecondary}>Non vérifié</Text>}
+            {user.isVerified ? (
+              <VerifiedShield />
+            ) : (
+              <Badge label="Profil non vérifié" tone="unverified" icon="!" />
+            )}
           </View>
           <Text variant="caption" color={colors.textSecondary} style={{ marginTop: spacing.sm }}>
             {user.phone}

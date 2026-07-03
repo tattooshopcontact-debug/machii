@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar, Button, Card, Screen, Text } from '@/components/ui';
@@ -15,10 +15,12 @@ type CriterionKey = 'punctuality' | 'cleanliness' | 'driving' | 'friendliness';
 
 const CRITERIA: { key: CriterionKey; label: string; description: string }[] = [
   { key: 'punctuality', label: 'Ponctualité', description: 'A respecté l\'heure prévue.' },
+  { key: 'driving', label: 'Conduite / Sécurité', description: 'A conduit prudemment, en sécurité.' },
   { key: 'cleanliness', label: 'Propreté', description: 'Véhicule propre et confortable.' },
-  { key: 'driving', label: 'Conduite', description: 'A conduit de manière sûre et sereine.' },
-  { key: 'friendliness', label: 'Sympathie', description: 'Agréable, courtois·e et communicatif·ve.' },
+  { key: 'friendliness', label: 'Communication & Sympathie', description: 'Agréable, courtois·e et communicatif·ve.' },
 ];
+
+const MIN_COMMENT = 10;
 
 function Stars({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   return (
@@ -54,7 +56,9 @@ export default function RateTripScreen() {
     driving: 5,
     friendliness: 5,
   });
+  const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const commentOk = comment.trim().length >= MIN_COMMENT;
 
   const rateeIsDriver = trip?.driver.id === ratee;
   const rateeProfile = rateeIsDriver ? trip?.driver : null;
@@ -64,6 +68,10 @@ export default function RateTripScreen() {
 
   async function onSubmit() {
     if (!user || !id || !ratee) return;
+    if (!commentOk) {
+      Alert.alert('Avis requis', `Écris quelques mots (au moins ${MIN_COMMENT} caractères) pour aider les autres.`);
+      return;
+    }
     setSubmitting(true);
     try {
       // Si on note un passager, on ne renseigne pas driving / cleanliness.
@@ -80,6 +88,7 @@ export default function RateTripScreen() {
           driving: rateeIsDriver ? criteria.driving : 0,
           friendliness: criteria.friendliness,
         },
+        comment: comment.trim(),
       });
       Alert.alert('Merci pour ta note', 'Ton avis aide les autres utilisateurs.', [
         { text: 'OK', onPress: () => router.back() },
@@ -143,10 +152,29 @@ export default function RateTripScreen() {
               </Card>
             ))}
 
+            <Card style={{ gap: spacing.sm }}>
+              <Text variant="bodyMedium">Ton avis</Text>
+              <Text variant="caption" color={colors.textSecondary}>
+                Raconte en quelques mots comment s'est passé le trajet. Ton avis sera visible sur son profil.
+              </Text>
+              <TextInput
+                value={comment}
+                onChangeText={setComment}
+                placeholder="Ex : Très ponctuel·le, conduite prudente, trajet agréable…"
+                placeholderTextColor={colors.textMuted}
+                multiline
+                style={styles.commentInput}
+                maxLength={500}
+              />
+              <Text variant="caption" color={commentOk ? colors.success : colors.textMuted} style={{ alignSelf: 'flex-end' }}>
+                {comment.trim().length}/{500}
+              </Text>
+            </Card>
+
             <Button
-              label="Envoyer ma note"
+              label="Envoyer mon avis"
               onPress={onSubmit}
-              disabled={submitting}
+              disabled={submitting || !commentOk}
               loading={submitting}
               style={{ marginTop: spacing.sm }}
             />
@@ -172,4 +200,14 @@ const styles = StyleSheet.create({
   rateeCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   critHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   starsRow: { flexDirection: 'row', gap: spacing.sm, justifyContent: 'center' },
+  commentInput: {
+    minHeight: 90,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    fontSize: 15,
+    color: colors.textPrimary,
+    textAlignVertical: 'top',
+  },
 });
