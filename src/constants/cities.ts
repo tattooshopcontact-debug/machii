@@ -59,21 +59,42 @@ export function countryFromPhone(phone: string | null | undefined): Country {
 }
 
 export const CITIES: City[] = [
-  // ——— Tunisie ———
+  // ——— Tunisie — 24 gouvernorats + villes touristiques majeures ———
+  // Grand Tunis
   { name: 'Tunis', lat: 36.8065, lng: 10.1815, country: 'TN' },
   { name: 'Ariana', lat: 36.8625, lng: 10.1956, country: 'TN' },
   { name: 'Ben Arous', lat: 36.7531, lng: 10.219, country: 'TN' },
+  { name: 'Manouba', lat: 36.8081, lng: 10.0956, country: 'TN' },
+  // Nord
+  { name: 'Bizerte', lat: 37.2744, lng: 9.8739, country: 'TN' },
+  { name: 'Béja', lat: 36.7256, lng: 9.1817, country: 'TN' },
+  { name: 'Jendouba', lat: 36.5011, lng: 8.7803, country: 'TN' },
+  { name: 'Tabarka', lat: 36.9544, lng: 8.758, country: 'TN' },
+  { name: 'Le Kef', lat: 36.1742, lng: 8.7047, country: 'TN' },
+  { name: 'Siliana', lat: 36.085, lng: 9.3708, country: 'TN' },
+  { name: 'Zaghouan', lat: 36.4028, lng: 10.1425, country: 'TN' },
+  // Cap Bon
   { name: 'Nabeul', lat: 36.4513, lng: 10.7357, country: 'TN' },
   { name: 'Hammamet', lat: 36.4, lng: 10.6167, country: 'TN' },
+  // Sahel & Centre
   { name: 'Sousse', lat: 35.8254, lng: 10.636, country: 'TN' },
   { name: 'Monastir', lat: 35.7643, lng: 10.8113, country: 'TN' },
   { name: 'Mahdia', lat: 35.5047, lng: 11.0622, country: 'TN' },
+  { name: 'El Jem', lat: 35.2967, lng: 10.7128, country: 'TN' },
   { name: 'Kairouan', lat: 35.6781, lng: 10.0963, country: 'TN' },
+  { name: 'Kasserine', lat: 35.1676, lng: 8.8365, country: 'TN' },
+  { name: 'Sidi Bouzid', lat: 35.0382, lng: 9.4849, country: 'TN' },
+  // Sud
   { name: 'Sfax', lat: 34.7406, lng: 10.7603, country: 'TN' },
-  { name: 'Gabès', lat: 33.8881, lng: 10.0986, country: 'TN' },
   { name: 'Gafsa', lat: 34.425, lng: 8.7842, country: 'TN' },
-  { name: 'Bizerte', lat: 37.2744, lng: 9.8739, country: 'TN' },
+  { name: 'Gabès', lat: 33.8881, lng: 10.0986, country: 'TN' },
+  { name: 'Tozeur', lat: 33.9197, lng: 8.1335, country: 'TN' },
+  { name: 'Kébili', lat: 33.7044, lng: 8.969, country: 'TN' },
+  { name: 'Douz', lat: 33.4569, lng: 9.0203, country: 'TN' },
+  { name: 'Médenine', lat: 33.3549, lng: 10.5055, country: 'TN' },
   { name: 'Djerba', lat: 33.8076, lng: 10.8451, country: 'TN' },
+  { name: 'Zarzis', lat: 33.5045, lng: 11.1122, country: 'TN' },
+  { name: 'Tataouine', lat: 32.9297, lng: 10.4518, country: 'TN' },
 
   // ——— Maroc (Cap Maroc M1 — axes prioritaires de l'audit 2026-06) ———
   { name: 'Casablanca', lat: 33.5731, lng: -7.5898, country: 'MA' },
