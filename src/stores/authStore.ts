@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import { mapProfileFromDb } from '@/lib/profile';
+import { mapProfileFromDb, PROFILE_COLS_NO_PHONE } from '@/lib/profile';
 import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database.types';
 import type { UserProfile } from '@/types/models';
@@ -104,7 +104,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       .from('profiles')
       .update(patch)
       .eq('id', userId)
-      .select()
+      .select(PROFILE_COLS_NO_PHONE)
       .single();
 
     if (profileError) throw profileError;
@@ -123,7 +123,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       const { data: profileRow, error } = await supabase
         .from('profiles')
-        .select()
+        .select(PROFILE_COLS_NO_PHONE)
         .eq('id', sessionUser.id)
         .maybeSingle();
       if (error || !profileRow) {
@@ -157,7 +157,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       .from('profiles')
       .update(dbPatch)
       .eq('id', current.id)
-      .select()
+      .select(PROFILE_COLS_NO_PHONE)
       .single();
     if (error) throw error;
     // Conserve le numéro déjà chargé (non renvoyé par le select).

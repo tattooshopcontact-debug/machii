@@ -29,11 +29,15 @@ export type Database = {
           is_verified: boolean;
           /** Modérateur KYC (migration 0034) — absent tant que la migration n'est pas appliquée. */
           is_admin?: boolean;
+          /** Compte suspendu par un admin (migration 0047_admin_console). */
+          is_suspended?: boolean;
           rating_avg: number;
           level: number;
           xp: number;
           bio: string | null;
           tags: string[];
+          /** Ville de rattachement (migration 0034_profile_prefs_city). */
+          city?: string | null;
           referral_code: string | null;
           referred_by: string | null;
           created_at: string;

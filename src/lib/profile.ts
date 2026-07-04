@@ -13,6 +13,15 @@ import type { UserProfile } from '@/types/models';
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 
+/**
+ * Colonnes lues sur son propre profil — SANS `phone` (jamais lu en SELECT,
+ * réinjecté localement par le store). Prépare la re-restriction du grant
+ * colonne-par-colonne (migration 0052, à appliquer APRÈS le rollout du
+ * build final — sinon 42501 sur les vieux builds qui font SELECT *).
+ */
+export const PROFILE_COLS_NO_PHONE =
+  'id,full_name,avatar_url,avatar_key,role,is_verified,is_admin,rating_avg,level,xp,bio,tags,country,gender,city,referral_code,referred_by,created_at';
+
 const TINTS: NonNullable<UserProfile['avatarTint']>[] = ['orange', 'navy', 'yellow'];
 
 function pickTint(id: string): NonNullable<UserProfile['avatarTint']> {
@@ -25,7 +34,7 @@ function xpForLevel(level: number): number {
   return 200 + Math.max(0, level - 1) * 200;
 }
 
-export function mapProfileFromDb(row: ProfileRow): UserProfile {
+export function mapProfileFromDb(row: Omit<ProfileRow, 'phone'> & { phone?: string | null }): UserProfile {
   return {
     id: row.id,
     fullName: row.full_name || 'Utilisateur',
