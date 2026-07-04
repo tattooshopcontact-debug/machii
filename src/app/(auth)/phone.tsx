@@ -32,11 +32,11 @@ export default function PhoneScreen() {
       setPendingPhone(phone);
       router.push('/(auth)/otp');
       if (!r.sent) {
-        // Pas de WhatsApp configure : on previent doucement le user.
+        // Config WhatsApp indisponible côté serveur : on prévient honnêtement.
         setTimeout(() =>
           Alert.alert(
-            'Code généré (mode démo)',
-            'WhatsApp n\'est pas encore branché en V0 — le code est dans la base. Pour tester maintenant, saisis n\'importe quel code à 4 chiffres dans l\'écran suivant.',
+            'Envoi indisponible',
+            'L\'envoi du code WhatsApp est momentanément indisponible. Réessaie dans quelques minutes.',
           ),
           200,
         );

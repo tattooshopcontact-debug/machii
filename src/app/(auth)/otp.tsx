@@ -29,7 +29,7 @@ export default function OtpScreen() {
   const [loading, setLoading] = useState(false);
 
   const codeDigits = code.replace(/\D/g, '');
-  const codeOk = codeDigits.length >= 4 && codeDigits.length <= 6;
+  const codeOk = codeDigits.length === 6;
   const nameOk = name.trim().length >= 2;
   const valid = codeOk && nameOk;
 
@@ -80,14 +80,14 @@ export default function OtpScreen() {
           Vérifie ton numéro
         </Text>
         <Text variant="body" color="rgba(255,255,255,0.85)" style={{ marginTop: spacing.xs }}>
-          Code envoyé au {pendingPhone ?? 'ton numéro'}.
+          Code à 6 chiffres envoyé sur WhatsApp au {pendingPhone ?? 'ton numéro'}.
         </Text>
 
         <TextInput
           value={code}
           onChangeText={setCode}
           keyboardType="number-pad"
-          placeholder="• • • •"
+          placeholder="• • • • • •"
           placeholderTextColor="rgba(255,255,255,0.4)"
           maxLength={6}
           style={styles.codeInput}
@@ -116,7 +116,7 @@ export default function OtpScreen() {
         </Pressable>
 
         <Text variant="caption" color="rgba(255,255,255,0.5)" center style={{ marginTop: spacing.md }}>
-          Mode démo : n'importe quel code à 4 chiffres marche.
+          Le code arrive sur WhatsApp 📱 — il expire dans 10 minutes.
         </Text>
       </View>
       </ScrollView>
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.2)',
     paddingVertical: spacing.lg,
     textAlign: 'center',
-    letterSpacing: 12,
+    letterSpacing: 8,
     fontFamily: fonts.bold,
     fontSize: fontSize.xxl,
     color: colors.textOnPrimary,
