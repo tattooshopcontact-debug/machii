@@ -8,12 +8,6 @@ import { usePublicProfile } from '@/lib/profile';
 import { useProfileReviews, type Review } from '@/lib/ratings';
 import { colors, fonts, radius, spacing } from '@/theme';
 
-const ROLE_LABEL: Record<string, string> = {
-  passenger: 'Passager·ère',
-  driver: 'Conducteur·rice',
-  both: 'Conducteur·rice & Passager·ère',
-};
-
 const MONTHS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
 function fmtDate(iso: string): string {
   const d = new Date(iso);
@@ -77,18 +71,52 @@ export default function PublicProfileScreen() {
               />
               <Text variant="title" style={{ marginTop: spacing.sm }}>{profile.fullName}</Text>
               <View style={styles.badgeRow}>
-                <Badge label={ROLE_LABEL[profile.role] ?? profile.role} tone="recurring" />
                 {profile.isVerified ? (
                   <VerifiedShield />
                 ) : (
                   <Badge label="Profil non vérifié" tone="unverified" icon="!" />
                 )}
               </View>
+              <View style={styles.headStats}>
+                <View style={styles.headStat}>
+                  <Text style={styles.headStatN}>{profile.tripCount}</Text>
+                  <Text variant="caption" color={colors.textSecondary}>Trajets</Text>
+                </View>
+                <View style={styles.headStat}>
+                  <Text style={styles.headStatN}>{profile.ratingCount > 0 ? profile.ratingAvg.toFixed(1) : '—'}</Text>
+                  <Text variant="caption" color={colors.textSecondary}>Note</Text>
+                </View>
+                <View style={styles.headStat}>
+                  <Text style={styles.headStatN}>N{profile.level}</Text>
+                  <Text variant="caption" color={colors.textSecondary}>Niveau</Text>
+                </View>
+              </View>
               {!!profile.createdAt && (
                 <Text variant="caption" color={colors.textSecondary}>
-                  Membre depuis {new Date(profile.createdAt).getFullYear()}
+                  Membre depuis {MONTHS[new Date(profile.createdAt).getMonth()]} {new Date(profile.createdAt).getFullYear()}
                 </Text>
               )}
+            </Card>
+
+            {/* À propos */}
+            <Card style={{ gap: spacing.xs }}>
+              <Text variant="bodyMedium">À propos</Text>
+              <Text variant="body" color={colors.textSecondary}>
+                {profile.bio?.trim() || "Ce membre n'a pas encore renseigné de bio."}
+              </Text>
+              {!!profile.city && <Text variant="caption" color={colors.textSecondary}>📍 {profile.city}</Text>}
+            </Card>
+
+            {/* Préférences de trajet */}
+            <Card style={{ gap: spacing.sm }}>
+              <Text variant="bodyMedium">Préférences de trajet</Text>
+              <View style={styles.prefRow}>
+                <Badge label={profile.prefSmoking ? 'Fumeur accepté' : 'Non-fumeur'} tone="neutral" />
+                {profile.prefMusic && <Badge label="Musique" tone="neutral" />}
+                {profile.prefPets && <Badge label="Animaux OK" tone="neutral" />}
+                {profile.prefChat === 'quiet' && <Badge label="Trajet calme" tone="neutral" />}
+                {profile.prefChat === 'chatty' && <Badge label="Discussion" tone="neutral" />}
+              </View>
             </Card>
 
             {/* Résumé des avis */}
@@ -145,6 +173,10 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: radius.xl,
   },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap', justifyContent: 'center' },
+  headStats: { flexDirection: 'row', alignSelf: 'stretch', marginTop: spacing.sm },
+  headStat: { flex: 1, alignItems: 'center', gap: 2 },
+  headStatN: { fontFamily: fonts.heavy, fontSize: 20, color: colors.primary },
+  prefRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   reviewHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   summaryTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   bigScore: { fontFamily: fonts.heavy, fontSize: 40, color: colors.primary },

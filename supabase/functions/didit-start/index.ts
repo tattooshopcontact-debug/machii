@@ -27,8 +27,10 @@ Deno.serve(async (req) => {
     if (!user?.id) return json({ error: 'not_authenticated' }, 401);
 
     // ⚠️ `callback` = URL où Didit RENVOIE L'UTILISATEUR à la fin (pas le webhook !).
-    // On l'envoie sur notre page de retour, qui rouvre l'app (deep link) + bouton.
-    const callback = `${SUPABASE_URL}/functions/v1/didit-return`;
+    // URL https d'un « lien vérifié Android » : l'app se rouvre DIRECTEMENT
+    // (sans popup) sur l'écran de vérification. En web pur, la page /verif-retour
+    // du site s'affiche en secours.
+    const callback = 'https://machii.net/verif-retour';
 
     const resp = await fetch('https://verification.didit.me/v3/session/', {
       method: 'POST',

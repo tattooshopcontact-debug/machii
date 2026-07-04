@@ -48,17 +48,61 @@ export function mapProfileFromDb(row: ProfileRow): UserProfile {
   };
 }
 
-/** Profil public d'un autre utilisateur (lecture seule, pour l'écran /user/[id]). */
+/** Données publiques d'un membre (pop-up profil conducteur, façon Airbnb). */
+export type PublicProfileData = {
+  id: string;
+  fullName: string;
+  avatarUrl: string | null;
+  avatarKey: string | null;
+  avatarTint: NonNullable<UserProfile['avatarTint']>;
+  isVerified: boolean;
+  level: number;
+  ratingAvg: number;
+  bio: string | null;
+  city: string | null;
+  prefSmoking: boolean;
+  prefMusic: boolean;
+  prefPets: boolean;
+  prefChat: 'quiet' | 'normal' | 'chatty' | null;
+  createdAt: string | null;
+  tripCount: number;
+  ratingCount: number;
+};
+
+/**
+ * Profil public d'un autre utilisateur (lecture seule, pour l'écran /user/[id]).
+ * Passe par la RPC `get_public_profile` (SECURITY DEFINER) : colonnes publiques
+ * uniquement, jamais le téléphone — même source que le site.
+ */
 export function usePublicProfile(id?: string) {
   return useQuery({
     queryKey: ['publicProfile', id],
     enabled: !!id,
     staleTime: 60_000,
-    queryFn: async (): Promise<UserProfile & { createdAt: string | null }> => {
-      const { data, error } = await supabase.from('profiles').select('*').eq('id', id!).maybeSingle();
+    queryFn: async (): Promise<PublicProfileData> => {
+      const { data, error } = await supabase.rpc('get_public_profile', { p_user_id: id! });
       if (error) throw error;
       if (!data) throw new Error('Profil introuvable');
-      return { ...mapProfileFromDb(data as ProfileRow), createdAt: (data as ProfileRow).created_at ?? null };
+      const r = data as Record<string, unknown>;
+      return {
+        id: String(r.id),
+        fullName: (r.full_name as string) || 'Utilisateur',
+        avatarUrl: (r.avatar_url as string) ?? null,
+        avatarKey: (r.avatar_key as string) ?? null,
+        avatarTint: pickTint(String(r.id)),
+        isVerified: Boolean(r.is_verified),
+        level: Number(r.level ?? 1),
+        ratingAvg: Number(r.rating_avg ?? 0),
+        bio: (r.bio as string) ?? null,
+        city: (r.city as string) ?? null,
+        prefSmoking: Boolean(r.pref_smoking),
+        prefMusic: r.pref_music == null ? true : Boolean(r.pref_music),
+        prefPets: Boolean(r.pref_pets),
+        prefChat: (r.pref_chat as PublicProfileData['prefChat']) ?? null,
+        createdAt: (r.created_at as string) ?? null,
+        tripCount: Number(r.trip_count ?? 0),
+        ratingCount: Number(r.rating_count ?? 0),
+      };
     },
   });
 }

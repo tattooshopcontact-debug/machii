@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -71,7 +71,7 @@ export default function SearchScreen() {
         )}
 
         {trips?.map((trip) => (
-          <TripCard key={trip.id} trip={trip} onPress={() => router.push(`/trip/${trip.id}`)} />
+          <TripCard key={trip.id} trip={trip} onPress={() => router.push(`/trip/${trip.id}`)} onPressDriver={() => router.push(`/user/${trip.driver.id}` as Href)} />
         ))}
 
         <Card style={styles.hint}>

@@ -67,6 +67,7 @@ export default function RootLayout() {
             <Stack.Screen name="profile/sos" />
             <Stack.Screen name="profile/delete" />
             <Stack.Screen name="request/create" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="user/[id]" options={{ presentation: 'modal' }} />
           </Stack>
         </QueryClientProvider>
       </SafeAreaProvider>

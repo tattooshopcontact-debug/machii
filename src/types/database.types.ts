@@ -441,6 +441,10 @@ export type Database = {
         Args: { p_booking_id: string };
         Returns: { ok: boolean; reason?: string };
       };
+      get_public_profile: {
+        Args: { p_user_id: string };
+        Returns: Record<string, unknown>;
+      };
       apply_referral: {
         Args: { p_code: string };
         Returns: { ok: boolean; reason?: string };

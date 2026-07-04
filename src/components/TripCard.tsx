@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { IconStar } from '@/components/icons';
 import { Avatar, Badge, Card, RoutePoints, Text } from '@/components/ui';
@@ -9,11 +9,13 @@ import type { Trip } from '@/types/models';
 type TripCardProps = {
   trip: Trip;
   onPress?: () => void;
+  /** Clic sur le nom/photo du conducteur → ouvre son profil (pop-up). */
+  onPressDriver?: () => void;
   /** Variante "match intelligent" : bordure jaune + badge waypoint. */
   asMatch?: boolean;
 };
 
-export function TripCard({ trip, onPress, asMatch = false }: TripCardProps) {
+export function TripCard({ trip, onPress, onPressDriver, asMatch = false }: TripCardProps) {
   const priceTone = trip.pricePerSeat === 0 ? 'free' : trip.pricePerSeat === null ? 'negotiable' : 'neutral';
 
   return (
@@ -28,18 +30,24 @@ export function TripCard({ trip, onPress, asMatch = false }: TripCardProps) {
       )}
 
       <View style={styles.topRow}>
-        <Avatar
-          name={trip.driver.fullName}
-          uri={trip.driver.avatarUrl ?? undefined}
-          tint={trip.driver.avatarTint}
-          size={44}
-          verified={trip.driver.isVerified}
-        />
-        <View style={styles.driverInfo}>
-          <Text variant="subtitle" numberOfLines={1}>
-            {trip.driver.fullName}
-          </Text>
-          <View style={styles.metaRow}>
+        <Pressable
+          style={styles.driverTap}
+          onPress={onPressDriver}
+          disabled={!onPressDriver}
+          hitSlop={6}
+        >
+          <Avatar
+            name={trip.driver.fullName}
+            uri={trip.driver.avatarUrl ?? undefined}
+            tint={trip.driver.avatarTint}
+            size={44}
+            verified={trip.driver.isVerified}
+          />
+          <View style={styles.driverInfo}>
+            <Text variant="subtitle" numberOfLines={1}>
+              {trip.driver.fullName}
+            </Text>
+            <View style={styles.metaRow}>
             {trip.driver.isNew ? (
               <Badge label="NOUVEAU" tone="new" />
             ) : (
@@ -51,8 +59,9 @@ export function TripCard({ trip, onPress, asMatch = false }: TripCardProps) {
               </>
             )}
             {!trip.driver.isVerified && <Badge label="Non vérifié" tone="unverified" icon="!" />}
+            </View>
           </View>
-        </View>
+        </Pressable>
         <View style={styles.priceCol}>
           {priceTone === 'free' ? (
             <Badge label="Gratuit" tone="free" />
@@ -87,6 +96,7 @@ const styles = StyleSheet.create({
   matchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   detour: { fontFamily: fonts.semibold, fontSize: fontSize.xs, color: colors.success },
   topRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  driverTap: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1 },
   driverInfo: { flex: 1, gap: 2 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   meta: { fontFamily: fonts.regular, fontSize: fontSize.xs, color: colors.textSecondary },
