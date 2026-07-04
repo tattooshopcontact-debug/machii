@@ -1,13 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useId, useMemo } from 'react';
+import { useMemo } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 
 import { HeaderBackdrop } from '@/components/home/HeaderBackdrop';
 import { TripCard } from '@/components/TripCard';
-import { Avatar, Button, Card, Logo, Text } from '@/components/ui';
+import { Avatar, Button, Card, GlossyDot, Logo, Text } from '@/components/ui';
 import { useMyIncomingBookings } from '@/lib/bookings';
 import { useMyPublishedTrips, useSearchTrips } from '@/lib/trips';
 import { useOpenTripRequests, type TripRequestWithPassenger } from '@/lib/tripRequests';
@@ -116,23 +115,6 @@ function ModeSwitcher({ current, onChange }: { current: AppMode; onChange: (m: A
 // Hero passager : carte de recherche flottante — style Home v5
 // ============================================================================
 
-/** Point glossy 3D (marqueur départ/arrivée) — recette sphère du pack design. */
-function GlossyDot({ hi, bg, lo, size = 14 }: { hi: string; bg: string; lo: string; size?: number }) {
-  const u = useId();
-  return (
-    <Svg width={size} height={size} viewBox="0 0 14 14">
-      <Defs>
-        <RadialGradient id={`${u}gd`} cx="30%" cy="25%" r="85%">
-          <Stop offset="0%" stopColor={hi} />
-          <Stop offset="55%" stopColor={bg} />
-          <Stop offset="100%" stopColor={lo} />
-        </RadialGradient>
-      </Defs>
-      <Circle cx={7} cy={7} r={7} fill={`url(#${u}gd)`} />
-    </Svg>
-  );
-}
-
 function PassengerHero() {
   const router = useRouter();
   const goSearch = () => router.push('/(tabs)/search');
@@ -144,7 +126,7 @@ function PassengerHero() {
 
         <Pressable style={styles.field} onPress={goSearch}>
           <View style={styles.fieldDotCol}>
-            <GlossyDot hi={palette.blueHi} bg={palette.navy} lo={palette.blueLo} />
+            <GlossyDot tint="navy" />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.fieldLabel}>Départ</Text>
@@ -156,7 +138,7 @@ function PassengerHero() {
 
         <Pressable style={styles.field} onPress={goSearch}>
           <View style={styles.fieldDotCol}>
-            <GlossyDot hi={palette.orangeHi} bg={palette.orange} lo={palette.orangeLo} />
+            <GlossyDot tint="orange" />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.fieldLabel}>Arrivée</Text>

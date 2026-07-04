@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Avatar, Badge, Card, RatingBar, Screen, Stars, Text, VerifiedShield } from '@/components/ui';
+import { HeaderBackdrop } from '@/components/home/HeaderBackdrop';
+import { Avatar, Badge, Card, RatingBar, Screen, Stars, Text } from '@/components/ui';
 import { usePublicProfile } from '@/lib/profile';
 import { useProfileReviews, type Review } from '@/lib/ratings';
 import { colors, fonts, radius, spacing } from '@/theme';
@@ -48,35 +49,57 @@ export default function PublicProfileScreen() {
   return (
     <View style={styles.root}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-        <Ionicons name="chevron-back" size={26} color={colors.textOnPrimary} onPress={() => router.back()} />
-        <Text variant="subtitle" color={colors.textOnPrimary}>Profil</Text>
-        <View style={{ width: 26 }} />
+        <HeaderBackdrop />
+        <View style={styles.headerBar}>
+          <Pressable onPress={() => router.back()} hitSlop={10} style={styles.glassBtn}>
+            <Ionicons name="chevron-back" size={22} color={colors.textOnPrimary} />
+          </Pressable>
+          <Text variant="subtitle" color={colors.textOnPrimary}>Profil</Text>
+          <View style={{ width: 40 }} />
+        </View>
+
+        {/* Identité intégrée au header (style v5) */}
+        {profile && (
+          <View style={styles.hero}>
+            <Avatar
+              name={profile.fullName}
+              uri={profile.avatarKey ? null : profile.avatarUrl ?? undefined}
+              assetKey={profile.avatarKey}
+              tint={profile.avatarTint}
+              size={88}
+              verified={profile.isVerified}
+            />
+            <Text style={styles.heroName}>{profile.fullName}</Text>
+            <View style={styles.pillRow}>
+              {profile.isVerified ? (
+                <View style={[styles.pill, styles.pillGreen]}>
+                  <Ionicons name="checkmark" size={11} color="#fff" />
+                  <Text style={styles.pillText}>VÉRIFIÉ</Text>
+                </View>
+              ) : (
+                <View style={[styles.pill, styles.pillGlass]}>
+                  <Text style={styles.pillText}>PROFIL NON VÉRIFIÉ</Text>
+                </View>
+              )}
+            </View>
+            {!!profile.createdAt && (
+              <Text style={styles.heroSince}>
+                Membre depuis {MONTHS[new Date(profile.createdAt).getMonth()]} {new Date(profile.createdAt).getFullYear()}
+              </Text>
+            )}
+          </View>
+        )}
       </View>
 
-      <Screen contentStyle={{ gap: spacing.md, paddingTop: spacing.lg }}>
+      <Screen contentStyle={{ gap: spacing.md, paddingTop: 0 }}>
         {isLoading || !profile ? (
           <Text variant="body" color={colors.textSecondary} center style={{ marginTop: spacing.xl }}>
             Chargement…
           </Text>
         ) : (
           <>
-            {/* Carte identité */}
-            <Card style={{ alignItems: 'center', gap: spacing.xs }}>
-              <Avatar
-                name={profile.fullName}
-                uri={profile.avatarKey ? null : profile.avatarUrl ?? undefined}
-                assetKey={profile.avatarKey}
-                tint={profile.avatarTint}
-                size={88}
-              />
-              <Text variant="title" style={{ marginTop: spacing.sm }}>{profile.fullName}</Text>
-              <View style={styles.badgeRow}>
-                {profile.isVerified ? (
-                  <VerifiedShield />
-                ) : (
-                  <Badge label="Profil non vérifié" tone="unverified" icon="!" />
-                )}
-              </View>
+            {/* Stats flottantes (chevauchent le header) */}
+            <Card elevation="floating" style={styles.statsCard}>
               <View style={styles.headStats}>
                 <View style={styles.headStat}>
                   <Text style={styles.headStatN}>{profile.tripCount}</Text>
@@ -91,11 +114,6 @@ export default function PublicProfileScreen() {
                   <Text variant="caption" color={colors.textSecondary}>Niveau</Text>
                 </View>
               </View>
-              {!!profile.createdAt && (
-                <Text variant="caption" color={colors.textSecondary}>
-                  Membre depuis {MONTHS[new Date(profile.createdAt).getMonth()]} {new Date(profile.createdAt).getFullYear()}
-                </Text>
-              )}
             </Card>
 
             {/* À propos */}
@@ -164,14 +182,49 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   header: {
     backgroundColor: colors.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
     borderBottomLeftRadius: radius.xl,
     borderBottomRightRadius: radius.xl,
+    overflow: 'hidden',
   },
+  headerBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  glassBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hero: { alignItems: 'center', gap: spacing.xs, marginTop: spacing.md },
+  heroName: {
+    color: colors.textOnPrimary,
+    fontFamily: fonts.heavy,
+    fontSize: 22,
+    letterSpacing: -0.4,
+    marginTop: spacing.sm,
+  },
+  heroSince: { color: 'rgba(255,255,255,0.7)', fontFamily: fonts.semibold, fontSize: 12.5 },
+  pillRow: { flexDirection: 'row', gap: spacing.sm },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: radius.pill,
+  },
+  pillGreen: { backgroundColor: colors.success },
+  pillGlass: { backgroundColor: 'rgba(255,255,255,0.16)' },
+  pillText: { color: '#fff', fontFamily: fonts.heavy, fontSize: 10, letterSpacing: 0.8 },
+  statsCard: { marginTop: spacing.md, paddingVertical: spacing.md },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap', justifyContent: 'center' },
   headStats: { flexDirection: 'row', alignSelf: 'stretch', marginTop: spacing.sm },
   headStat: { flex: 1, alignItems: 'center', gap: 2 },

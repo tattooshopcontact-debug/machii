@@ -4,6 +4,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { enableFreeze } from 'react-native-screens';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -12,6 +13,14 @@ import { registerForPushNotifications } from '@/lib/notifications';
 import { queryClient } from '@/lib/queryClient';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, interFontMap } from '@/theme';
+
+// ⚠️ Désactive le « gel » des écrans hors-champ (react-native-screens). Le
+// détach/reattach d'un écran gelé pendant une transition de navigation
+// déclenche, sous la New Architecture (Fabric), le crash
+// `ReactClippingViewManager.addView` / IllegalStateException « child already
+// has a parent » (via ReanimatedNativeHierarchyManager). Crash observé sur le
+// build 13 (2 testeurs). Garde-fou documenté (reanimated GH #3234).
+enableFreeze(false);
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 

@@ -3,19 +3,21 @@ import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { IconCar, IconClock, IconLock, IconStar } from '@/components/icons';
+import { HeaderBackdrop } from '@/components/home/HeaderBackdrop';
+import { IconCar, IconLock, IconStar } from '@/components/icons';
 import { TripMap } from '@/components/TripMap';
-import { Avatar, Badge, Button, Card, LegalBanner, RoutePoints, Screen, Text, VerifiedShield } from '@/components/ui';
+import { Avatar, Button, Card, LegalBanner, RoutePoints, Screen, Text } from '@/components/ui';
 import { useCreateBooking, useMyBookingForTrip } from '@/lib/bookings';
 import { describeError } from '@/lib/errors';
 import { useFeature } from '@/lib/featureFlags';
 import { formatDay, formatPrice, formatTime } from '@/lib/format';
 import { useLivePosition, useShareLivePosition } from '@/lib/liveTracking';
+import { usePublicProfile } from '@/lib/profile';
 import { useShareTrip } from '@/lib/tripShare';
 import { useTrip } from '@/lib/trips';
 import { useTripVehicle } from '@/lib/vehicles';
 import { useAuthStore } from '@/stores/authStore';
-import { colors, fontSize, radius, spacing } from '@/theme';
+import { colors, fonts, palette, radius, shadows, spacing } from '@/theme';
 
 export default function TripDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -99,15 +101,78 @@ export default function TripDetailScreen() {
     completed: 'Ce trajet est terminé.',
   };
 
+  // Préférences du conducteur (chips) — même RPC que le pop-up profil.
+  const { data: driverProfile } = usePublicProfile(trip?.driver.id);
+  const prefChips = driverProfile
+    ? [
+        driverProfile.prefSmoking ? '🚬 Fumeur OK' : '🚭 Non-fumeur',
+        driverProfile.prefMusic ? '🎵 Musique OK' : '🔇 Sans musique',
+        ...(driverProfile.prefPets ? ['🐾 Animaux OK'] : []),
+        ...(driverProfile.prefChat === 'quiet'
+          ? ['🤫 Trajet calme']
+          : driverProfile.prefChat === 'chatty'
+            ? ['💬 Discussion']
+            : []),
+      ]
+    : [];
+
   return (
     <View style={styles.root}>
-      {/* Header */}
+      {/* Header v5 : fond navy animé + conducteur intégré */}
       <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-        <Pressable onPress={() => router.back()} hitSlop={10} style={styles.back}>
-          <Ionicons name="chevron-back" size={26} color={colors.textOnPrimary} />
-        </Pressable>
-        <Text variant="subtitle" color={colors.textOnPrimary}>Détail du trajet</Text>
-        <View style={{ width: 26 }} />
+        <HeaderBackdrop />
+        <View style={styles.headerBar}>
+          <Pressable onPress={() => router.back()} hitSlop={10} style={styles.glassBtn}>
+            <Ionicons name="chevron-back" size={22} color={colors.textOnPrimary} />
+          </Pressable>
+          <Text variant="subtitle" color={colors.textOnPrimary}>Détail du trajet</Text>
+          {trip && user ? (
+            <Pressable onPress={onShareToContact} hitSlop={10} style={styles.glassBtn}>
+              <Ionicons name="share-outline" size={19} color={colors.textOnPrimary} />
+            </Pressable>
+          ) : (
+            <View style={{ width: 40 }} />
+          )}
+        </View>
+
+        {trip && (
+          <Pressable
+            style={styles.driverHeader}
+            onPress={() => router.push(`/user/${trip.driver.id}` as Href)}
+          >
+            <Avatar
+              name={trip.driver.fullName}
+              uri={trip.driver.avatarUrl ?? undefined}
+              tint={trip.driver.avatarTint}
+              size={72}
+              verified={trip.driver.isVerified}
+            />
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={styles.driverName} numberOfLines={1}>{trip.driver.fullName}</Text>
+              <View style={styles.driverMeta}>
+                <IconStar size={14} />
+                <Text style={styles.driverMetaText}>
+                  {trip.driver.isNew
+                    ? 'Nouveau membre'
+                    : `${trip.driver.ratingAvg.toFixed(1)} · ${trip.driver.tripCount} trajets`}
+                </Text>
+              </View>
+              <View style={styles.pillRow}>
+                {trip.driver.isVerified ? (
+                  <View style={[styles.pill, styles.pillGreen]}>
+                    <Ionicons name="checkmark" size={11} color="#fff" />
+                    <Text style={styles.pillText}>VÉRIFIÉ</Text>
+                  </View>
+                ) : (
+                  <View style={[styles.pill, styles.pillNavy]}>
+                    <Text style={styles.pillText}>NOUVEAU PROFIL</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.6)" />
+          </Pressable>
+        )}
       </View>
 
       {isLoading && (
@@ -132,33 +197,33 @@ export default function TripDetailScreen() {
 
       {trip && (
         <>
-          <Screen contentStyle={{ gap: spacing.md, paddingTop: spacing.lg }}>
-            <Pressable onPress={() => router.push(`/user/${trip.driver.id}` as Href)}>
-              <Card style={styles.driver}>
-                <Avatar
-                  name={trip.driver.fullName}
-                  uri={trip.driver.avatarUrl ?? undefined}
-                  tint={trip.driver.avatarTint}
-                  size={56}
-                  verified={trip.driver.isVerified}
-                />
-                <View style={{ flex: 1, gap: 4 }}>
-                  <Text variant="subtitle">{trip.driver.fullName}</Text>
-                  <View style={styles.metaRow}>
-                    <IconStar size={15} />
-                    <Text variant="caption">
-                      {trip.driver.isNew ? 'Nouveau' : `${trip.driver.ratingAvg.toFixed(1)} · ${trip.driver.tripCount} trajets`}
+          <Screen contentStyle={{ gap: spacing.md, paddingTop: 0 }}>
+            {/* Carte détails flottante (chevauche le header, style v5) */}
+            <Card elevation="floating" style={styles.detailsCard}>
+              <Text style={styles.sectionTitle}>Détails du trajet</Text>
+              <RoutePoints origin={trip.origin} destination={trip.destination} via={trip.via} labels />
+              <View style={styles.detailsDivider} />
+              <View style={styles.detailsFooter}>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <View style={styles.infoItem}>
+                    <Ionicons name="calendar-outline" size={16} color={colors.primary} />
+                    <Text variant="bodyMedium">
+                      {formatDay(trip.departureTime)} · {formatTime(trip.departureTime)}
                     </Text>
                   </View>
-                  {trip.driver.isVerified ? (
-                    <VerifiedShield />
-                  ) : (
-                    <Badge label="Profil non vérifié" tone="unverified" icon="!" />
-                  )}
+                  <View style={styles.infoItem}>
+                    <Ionicons name="people-outline" size={16} color={colors.primary} />
+                    <Text variant="caption" color={colors.textSecondary}>
+                      {trip.seatsAvailable} place{trip.seatsAvailable > 1 ? 's' : ''} disponible
+                      {trip.seatsAvailable > 1 ? 's' : ''}
+                    </Text>
+                  </View>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-              </Card>
-            </Pressable>
+                <View style={styles.priceBadge}>
+                  <Text style={styles.priceBadgeText}>{formatPrice(trip.pricePerSeat, trip.country)}</Text>
+                </View>
+              </View>
+            </Card>
 
             {mapEnabled && (
               <TripMap
@@ -192,16 +257,7 @@ export default function TripDetailScreen() {
               />
             )}
 
-            {/* #11-B — Partage à un proche : pour TOUT participant (1 tap). */}
-            {user && (
-              <Button
-                label="Partager mon trajet à un proche"
-                variant="outline"
-                left={<Ionicons name="share-social-outline" size={18} color={colors.primary} />}
-                onPress={onShareToContact}
-                loading={shareTrip.isPending}
-              />
-            )}
+            {/* #11-B — Partage à un proche : bouton déplacé dans le header (icône). */}
             {myShare.sharing && !isOwnTrip && (
               <Text variant="caption" color={colors.textSecondary} center>
                 Position partagée avec ton proche (s'arrête à la fermeture de l'app ou après 4h)
@@ -212,24 +268,6 @@ export default function TripDetailScreen() {
                 {myShare.error}
               </Text>
             )}
-
-            <Card style={{ gap: spacing.lg }}>
-              <RoutePoints origin={trip.origin} destination={trip.destination} via={trip.via} />
-              <View style={styles.infoRow}>
-                <View style={styles.infoItem}>
-                  <Ionicons name="calendar-outline" size={18} color={colors.primary} />
-                  <Text variant="bodyMedium">{formatDay(trip.departureTime)}</Text>
-                </View>
-                <View style={styles.infoItem}>
-                  <IconClock size={18} />
-                  <Text variant="bodyMedium">{formatTime(trip.departureTime)}</Text>
-                </View>
-                <View style={styles.infoItem}>
-                  <Ionicons name="people-outline" size={18} color={colors.primary} />
-                  <Text variant="bodyMedium">{trip.seatsAvailable} places</Text>
-                </View>
-              </View>
-            </Card>
 
             {vehicleShown ? (
               <Card style={styles.locked}>
@@ -280,12 +318,27 @@ export default function TripDetailScreen() {
               </Card>
             )}
 
-            <Card style={styles.priceCard}>
-              <Text variant="body" color={colors.textSecondary}>Participation aux frais</Text>
-              <Text variant="title" color={trip.pricePerSeat === 0 ? colors.success : colors.primary}>
-                {formatPrice(trip.pricePerSeat, trip.country)}
-              </Text>
-            </Card>
+            {prefChips.length > 0 && (
+              <View style={{ gap: spacing.sm }}>
+                <Text style={styles.sectionTitle}>Préférences du conducteur</Text>
+                <View style={styles.chipsWrap}>
+                  {prefChips.map((c) => (
+                    <View key={c} style={styles.prefChip}>
+                      <Text style={styles.prefChipText}>{c}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {!!driverProfile?.bio && (
+              <View style={{ gap: spacing.sm }}>
+                <Text style={styles.sectionTitle}>À propos</Text>
+                <Card>
+                  <Text style={styles.bioText}>« {driverProfile.bio} »</Text>
+                </Card>
+              </View>
+            )}
 
             <LegalBanner compact country={trip.country} />
           </Screen>
@@ -347,19 +400,106 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: colors.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
     borderBottomLeftRadius: radius.xl,
     borderBottomRightRadius: radius.xl,
+    overflow: 'hidden',
   },
-  back: { width: 26 },
-  driver: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: 2 },
-  infoRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  headerBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  glassBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Conducteur intégré au header (style v5)
+  driverHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginTop: spacing.lg,
+  },
+  driverName: {
+    color: colors.textOnPrimary,
+    fontFamily: fonts.heavy,
+    fontSize: 21,
+    letterSpacing: -0.4,
+  },
+  driverMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: 3 },
+  driverMetaText: { color: 'rgba(255,255,255,0.78)', fontFamily: fonts.semibold, fontSize: 13 },
+  pillRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: radius.pill,
+  },
+  pillGreen: { backgroundColor: colors.success },
+  pillNavy: { backgroundColor: 'rgba(255,255,255,0.16)' },
+  pillText: {
+    color: '#fff',
+    fontFamily: fonts.heavy,
+    fontSize: 10,
+    letterSpacing: 0.8,
+  },
+
+  // Carte détails flottante
+  detailsCard: { marginTop: spacing.md, gap: spacing.md },
+  sectionTitle: {
+    color: colors.primary,
+    fontFamily: fonts.heavy,
+    fontSize: 12,
+    letterSpacing: 1.9,
+    textTransform: 'uppercase',
+  },
+  detailsDivider: { height: 1, backgroundColor: 'rgba(15,42,82,0.08)' },
+  detailsFooter: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   infoItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  priceBadge: {
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.md + 2,
+    backgroundColor: colors.accent,
+    ...shadows.cta,
+  },
+  priceBadgeText: {
+    color: palette.onYellow,
+    fontFamily: fonts.heavy,
+    fontSize: 18,
+    letterSpacing: -0.3,
+  },
+
+  // Préférences + bio
+  chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  prefChip: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md + 2,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.card,
+  },
+  prefChipText: { color: colors.primary, fontFamily: fonts.bold, fontSize: 13 },
+  bioText: {
+    color: colors.textPrimary,
+    fontFamily: fonts.regular,
+    fontSize: 14.5,
+    lineHeight: 22,
+    fontStyle: 'italic',
+  },
   locked: { gap: spacing.md },
   vehiclePhoto: { width: '100%', height: 160, borderRadius: radius.md, backgroundColor: colors.surfaceAlt },
   lockRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
