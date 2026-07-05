@@ -1,15 +1,16 @@
 /**
- * Mon véhicule (#12-A). Le conducteur enregistre marque / modèle / couleur /
- * plaque / nombre de places. La plaque ne sera JAMAIS montrée aux passagers
- * avant qu'ils soient acceptés (révélation échelonnée côté serveur).
+ * Mon véhicule (#12-A). Formulaire ULTRA-SIMPLE (façon BlaBlaCar) : marque /
+ * modèle / couleur / places. Pas de photo, pas de document.
+ * La plaque reste OPTIONNELLE : elle n'est jamais montrée publiquement, mais
+ * si le conducteur la renseigne, elle est révélée aux passagers qu'il a
+ * acceptés (reconnaître la voiture au point de RDV — révélation échelonnée
+ * côté serveur). Elle ne bloque jamais l'enregistrement.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -22,7 +23,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Card, Screen, Text } from '@/components/ui';
 import { describeError } from '@/lib/errors';
-import { pickVehiclePhoto, uploadVehiclePhoto, useMyVehicle, useUpsertVehicle } from '@/lib/vehicles';
+import { useMyVehicle, useUpsertVehicle } from '@/lib/vehicles';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, fonts, fontSize, radius, spacing } from '@/theme';
 
@@ -40,8 +41,6 @@ export default function VehicleScreen() {
   const [color, setColor] = useState('');
   const [plate, setPlate] = useState('');
   const [seats, setSeats] = useState(4);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   useEffect(() => {
     if (!vehicle) return;
@@ -50,32 +49,17 @@ export default function VehicleScreen() {
     setColor(vehicle.color ?? '');
     setPlate(vehicle.plate ?? '');
     setSeats(vehicle.seats ?? 4);
-    setPhotoUrl(vehicle.photo_url ?? null);
   }, [vehicle]);
 
-  async function onPickPhoto() {
-    if (!user) return;
-    setUploadingPhoto(true);
-    try {
-      const asset = await pickVehiclePhoto();
-      if (!asset) return;
-      const url = await uploadVehiclePhoto(user.id, asset);
-      setPhotoUrl(url);
-    } catch (e: unknown) {
-      Alert.alert('Photo non envoyée', describeError(e));
-    } finally {
-      setUploadingPhoto(false);
-    }
-  }
-
-  const valid = make.trim().length >= 2 && color.trim().length >= 2 && plate.trim().length >= 3;
+  // Simple : seules la marque et la couleur sont requises. Le reste est libre.
+  const valid = make.trim().length >= 2 && color.trim().length >= 2;
 
   async function onSave() {
     if (!user || !valid) return;
     try {
       await upsert.mutateAsync({
         driverId: user.id,
-        vehicle: { make, model, color, plate, seats, photo_url: photoUrl },
+        vehicle: { make, model, color, plate, seats, photo_url: null },
       });
       Alert.alert('Véhicule enregistré', 'Tes infos véhicule sont à jour.', [
         { text: 'OK', onPress: () => router.back() },
@@ -98,34 +82,15 @@ export default function VehicleScreen() {
       <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <Screen contentStyle={{ gap: spacing.md, paddingTop: spacing.lg }}>
           <Text variant="caption" color={colors.textSecondary}>
-            La marque, le modèle et la couleur sont visibles par tous. La plaque n'apparaît
-            qu'aux passagers dont tu as accepté la demande.
+            La marque, le modèle et la couleur sont visibles par tous. La plaque (optionnelle)
+            n'apparaît qu'aux passagers dont tu as accepté la demande.
           </Text>
 
           <Card style={{ gap: spacing.md }}>
             <Field label="Marque" value={make} onChange={setMake} placeholder="ex : Renault" />
             <Field label="Modèle (optionnel)" value={model} onChange={setModel} placeholder="ex : Clio" />
             <Field label="Couleur" value={color} onChange={setColor} placeholder="ex : bleue" />
-            <Field label="Plaque d'immatriculation" value={plate} onChange={setPlate} placeholder="ex : 5847 TUN 142" autoCapitalize="characters" />
-          </Card>
-
-          <Card style={{ gap: spacing.sm }}>
-            <Text variant="label">Photo du véhicule (optionnel)</Text>
-            <Text variant="caption" color={colors.textSecondary}>
-              Visible uniquement par les passagers dont tu as accepté la demande.
-            </Text>
-            <Pressable onPress={onPickPhoto} disabled={uploadingPhoto} style={styles.photoBox}>
-              {uploadingPhoto ? (
-                <ActivityIndicator color={colors.primary} />
-              ) : photoUrl ? (
-                <Image source={{ uri: photoUrl }} style={styles.photo} resizeMode="cover" />
-              ) : (
-                <View style={styles.photoEmpty}>
-                  <Ionicons name="camera-outline" size={28} color={colors.textMuted} />
-                  <Text variant="caption" color={colors.textSecondary}>Ajouter une photo</Text>
-                </View>
-              )}
-            </Pressable>
+            <Field label="Plaque (optionnel)" value={plate} onChange={setPlate} placeholder="ex : 5847 TUN 142" autoCapitalize="characters" />
           </Card>
 
           <Card style={{ gap: spacing.sm }}>
@@ -205,18 +170,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     color: colors.textPrimary,
   },
-  photoBox: {
-    height: 160,
-    borderRadius: radius.md,
-    backgroundColor: colors.surfaceAlt,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  photo: { width: '100%', height: '100%' },
-  photoEmpty: { alignItems: 'center', gap: spacing.xs },
   seatsRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
   seatChip: {
     width: 48,
