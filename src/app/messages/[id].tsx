@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -16,6 +17,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui';
 import { useConversationMessages, useMyConversations, useSendMessage, type ChatMessage } from '@/lib/chat';
 import { describeError } from '@/lib/errors';
+import { useFeature } from '@/lib/featureFlags';
+import { useTripVehicle } from '@/lib/vehicles';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, fonts, fontSize, radius, spacing } from '@/theme';
 
@@ -43,6 +46,13 @@ export default function ConversationScreen() {
   const tripLabel = conversation
     ? `${conversation.tripOrigin} → ${conversation.tripDestination}`
     : null;
+
+  // Véhicule révélé UNIQUEMENT au conducteur / passager accepté (get_trip_vehicle).
+  const vehicleEnabled = useFeature('vehicle_info');
+  const { data: vehicle } = useTripVehicle(
+    vehicleEnabled && conversation?.tripId ? conversation.tripId : undefined,
+  );
+  const vehicleShown = !!vehicle?.ok && !!vehicle?.revealed;
 
   // Auto-scroll en bas quand un nouveau message arrive.
   useEffect(() => {
@@ -86,6 +96,26 @@ export default function ConversationScreen() {
         </View>
         <View style={{ width: 26 }} />
       </View>
+
+      {vehicleShown && (
+        <View style={styles.vehicleStrip}>
+          {vehicle?.photo_url ? (
+            <Image source={{ uri: vehicle.photo_url }} style={styles.vehicleThumb} resizeMode="cover" />
+          ) : (
+            <View style={[styles.vehicleThumb, styles.vehicleThumbEmpty]}>
+              <Ionicons name="car-sport" size={22} color={colors.primary} />
+            </View>
+          )}
+          <View style={{ flex: 1 }}>
+            <Text variant="caption" color={colors.textSecondary}>Voiture à repérer</Text>
+            <Text variant="bodyMedium" numberOfLines={1}>
+              {[vehicle?.make, vehicle?.model].filter(Boolean).join(' ') || 'Véhicule'}
+              {vehicle?.color ? ` · ${vehicle.color}` : ''}
+              {vehicle?.plate ? ` · ${vehicle.plate}` : ''}
+            </Text>
+          </View>
+        </View>
+      )}
 
       {isLoading && (
         <View style={styles.center}>
@@ -180,6 +210,18 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: radius.xl,
   },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.lg },
+  vehicleStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  vehicleThumb: { width: 56, height: 40, borderRadius: radius.sm, backgroundColor: colors.surfaceAlt },
+  vehicleThumbEmpty: { alignItems: 'center', justifyContent: 'center' },
   bubble: {
     maxWidth: '80%',
     padding: spacing.md,
