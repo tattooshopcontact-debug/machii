@@ -76,13 +76,12 @@ export type PublicProfileData = {
   createdAt: string | null;
   tripCount: number;
   ratingCount: number;
-  /** Véhicule public du conducteur (jamais la plaque). null si non renseigné. */
+  /** Véhicule public du conducteur (jamais la plaque NI la photo). null si non renseigné. */
   vehicle: {
     make: string | null;
     model: string | null;
     color: string | null;
     seats: number | null;
-    photoUrl: string | null;
   } | null;
 };
 
@@ -127,7 +126,6 @@ export function usePublicProfile(id?: string) {
             model: (v.model as string) ?? null,
             color: (v.color as string) ?? null,
             seats: v.seats == null ? null : Number(v.seats),
-            photoUrl: (v.photo_url as string) ?? null,
           };
         })(),
       };
