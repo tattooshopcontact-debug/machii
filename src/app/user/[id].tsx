@@ -125,6 +125,21 @@ export default function PublicProfileScreen() {
               {!!profile.city && <Text variant="caption" color={colors.textSecondary}>📍 {profile.city}</Text>}
             </Card>
 
+            {/* Véhicule (jamais la plaque) */}
+            {profile.vehicle && (profile.vehicle.make || profile.vehicle.model) && (
+              <Card style={{ gap: spacing.xs }}>
+                <Text variant="bodyMedium">Véhicule</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                  <Ionicons name="car-sport-outline" size={20} color={colors.primary} />
+                  <Text variant="body" color={colors.textSecondary}>
+                    {[profile.vehicle.make, profile.vehicle.model].filter(Boolean).join(' ')}
+                    {profile.vehicle.color ? ` · ${profile.vehicle.color}` : ''}
+                    {profile.vehicle.seats ? ` · ${profile.vehicle.seats} places` : ''}
+                  </Text>
+                </View>
+              </Card>
+            )}
+
             {/* Préférences de trajet */}
             <Card style={{ gap: spacing.sm }}>
               <Text variant="bodyMedium">Préférences de trajet</Text>

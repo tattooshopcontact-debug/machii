@@ -76,6 +76,14 @@ export type PublicProfileData = {
   createdAt: string | null;
   tripCount: number;
   ratingCount: number;
+  /** Véhicule public du conducteur (jamais la plaque). null si non renseigné. */
+  vehicle: {
+    make: string | null;
+    model: string | null;
+    color: string | null;
+    seats: number | null;
+    photoUrl: string | null;
+  } | null;
 };
 
 /**
@@ -111,6 +119,17 @@ export function usePublicProfile(id?: string) {
         createdAt: (r.created_at as string) ?? null,
         tripCount: Number(r.trip_count ?? 0),
         ratingCount: Number(r.rating_count ?? 0),
+        vehicle: (() => {
+          const v = r.vehicle as Record<string, unknown> | null;
+          if (!v) return null;
+          return {
+            make: (v.make as string) ?? null,
+            model: (v.model as string) ?? null,
+            color: (v.color as string) ?? null,
+            seats: v.seats == null ? null : Number(v.seats),
+            photoUrl: (v.photo_url as string) ?? null,
+          };
+        })(),
       };
     },
   });
