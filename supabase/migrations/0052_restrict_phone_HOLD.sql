@@ -22,8 +22,10 @@ grant select (
   id, full_name, avatar_url, avatar_key, role, is_verified, is_admin, is_suspended,
   rating_avg, level, xp, bio, tags, country, gender, city,
   referral_code, referred_by, created_at,
-  pref_smoking, pref_music, pref_pets, pref_chat
+  pref_smoking, pref_music, pref_pets, pref_chat,
+  identity_verified, email_verified_at
 ) on public.profiles to authenticated;
 
--- L'utilisateur lit SON numéro via get_my_phone() (0018) ; l'admin via les RPCs
--- admin_* (SECURITY DEFINER). Aucune lecture directe de `phone` ne subsiste.
+-- ⚠️ `phone` ET `contact_email` (0053) restent EXCLUS : données privées.
+-- L'utilisateur lit SON numéro via get_my_phone() (0018) et SON e-mail via
+-- get_my_email_status() (0053) ; l'admin via les RPCs admin_* (SECURITY DEFINER).
