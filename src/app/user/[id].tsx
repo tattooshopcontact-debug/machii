@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HeaderBackdrop } from '@/components/home/HeaderBackdrop';
@@ -129,6 +129,13 @@ export default function PublicProfileScreen() {
             {profile.vehicle && (profile.vehicle.make || profile.vehicle.model) && (
               <Card style={{ gap: spacing.xs }}>
                 <Text variant="bodyMedium">Véhicule</Text>
+                {profile.vehicle.photoUrl && (
+                  <Image
+                    source={{ uri: profile.vehicle.photoUrl }}
+                    style={{ width: '100%', height: 150, borderRadius: radius.md }}
+                    resizeMode="cover"
+                  />
+                )}
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                   <Ionicons name="car-sport-outline" size={20} color={colors.primary} />
                   <Text variant="body" color={colors.textSecondary}>

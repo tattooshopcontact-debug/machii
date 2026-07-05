@@ -61,6 +61,7 @@ export default function ProgressionScreen() {
           <Row icon="car-sport-outline" text="Trajet terminé" pts="+10" />
           <Row icon="star-outline" text="Note laissée après un trajet" pts="+5" />
           <Row icon="gift-outline" text="Parrainage d'un ami" pts="+20" />
+          <Row icon="camera-outline" text="Photo de ton véhicule" pts="+15" />
         </Card>
 
         {/* Thèmes débloquables */}
