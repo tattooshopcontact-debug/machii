@@ -34,11 +34,12 @@ begin
       insert into public.phone_otp (phone, code, expires_at, consumed, consumed_at)
       values (p_phone, p_code, now() + interval '1 minute', true, now());
     end if;
-  elsif p_phone = '+21600000000' and regexp_replace(coalesce(p_code, ''), '\D', '', 'g') = '123456' then
+  elsif v_digits = '21600000000' and regexp_replace(coalesce(p_code, ''), '\D', '', 'g') = '123456' then
     -- COMPTE DÉMO GOOGLE PLAY (examinateurs) : numéro factice, code fixe.
+    -- Comparaison sur les CHIFFRES (robuste aux espaces envoyés par le site).
     insert into public.phone_otp (phone, code, expires_at, consumed, consumed_at)
     values (p_phone, '123456', now() + interval '1 minute', true, now());
-  elsif p_phone = '+21612345678' and regexp_replace(coalesce(p_code, ''), '\D', '', 'g') = '000000' then
+  elsif v_digits = '21612345678' and regexp_replace(coalesce(p_code, ''), '\D', '', 'g') = '000000' then
     -- COMPTE DE TEST INTERNE (Faouez) : numéro factice, code fixe.
     insert into public.phone_otp (phone, code, expires_at, consumed, consumed_at)
     values (p_phone, '000000', now() + interval '1 minute', true, now());
