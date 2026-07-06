@@ -66,7 +66,7 @@ export default function CreateTripScreen() {
       .then((p) => {
         if (!alive) return;
         setPreview(p);
-        if (p) setPrice((cur) => (cur === '' ? String(p.suggested) : cur));
+        if (p) setPrice((cur) => (cur === '' ? String(p.totalSuggested) : cur));
       })
       .catch(() => alive && setPreview(null));
     return () => {
@@ -116,13 +116,13 @@ export default function CreateTripScreen() {
     setSubmitting(true);
     try {
       const departureTime = parseDepartureTime(time);
-      // Offert = 0 ; Participation = montant choisi, PLAFONNÉ au max calculé (jamais de bénéfice).
-      let parsedPrice: number | null;
+      // Offert = total 0 ; Participation = prix TOTAL du voyage, PLAFONNÉ (divisé ensuite entre occupants).
+      let priceTotal: number;
       if (priceMode === 'free') {
-        parsedPrice = 0;
+        priceTotal = 0;
       } else {
         const val = Math.max(0, Math.round(Number(price) || 0));
-        parsedPrice = preview ? Math.min(val, Math.round(preview.max)) : val;
+        priceTotal = preview ? Math.min(val, Math.round(preview.totalMax)) : val;
       }
 
       const { error } = await supabase.from('trips').insert({
@@ -134,7 +134,9 @@ export default function CreateTripScreen() {
         departure_time: departureTime,
         seats_total: seats,
         seats_available: seats,
-        price_per_seat: parsedPrice,
+        // Prix TOTAL du voyage (divisé dynamiquement) ; per_seat null en Participation (calculé à la volée).
+        price_total: priceTotal,
+        price_per_seat: priceMode === 'free' ? 0 : null,
         status: 'open',
         is_recurring: recurring,
         // Cap Maroc M2 : le trajet hérite du pays de la ville de départ.
@@ -271,20 +273,21 @@ export default function CreateTripScreen() {
                     onChangeText={(v) => {
                       const digits = v.replace(/[^0-9]/g, '');
                       if (digits === '') { setPrice(''); return; }
-                      const n = Math.min(Math.max(0, Number(digits)), Math.round(preview.max));
+                      const n = Math.min(Math.max(0, Number(digits)), Math.round(preview.totalMax));
                       setPrice(String(n));
                     }}
                     keyboardType="number-pad"
                     style={styles.priceInput}
-                    placeholder={String(preview.suggested)}
+                    placeholder={String(preview.totalSuggested)}
                     placeholderTextColor={colors.textMuted}
                   />
-                  <Text variant="subtitle" color={colors.textSecondary}>DT / place</Text>
+                  <Text variant="subtitle" color={colors.textSecondary}>DT (tout le voyage)</Text>
                 </View>
                 <View style={styles.priceHintRow}>
                   <Ionicons name="bulb-outline" size={14} color={colors.primary} />
                   <Text variant="caption" color={colors.textSecondary}>
-                    Prix conseillé : <Text variant="caption" color={colors.primary}>{preview.suggested} DT</Text> · Maximum : {preview.max} DT — tu ne peux pas dépasser. C'est du partage de frais (carburant, usure, péage), jamais un bénéfice.
+                    Prix conseillé : <Text variant="caption" color={colors.primary}>{preview.totalSuggested} DT</Text> · Maximum : {preview.totalMax} DT. Ce prix se <Text variant="caption" color={colors.textPrimary}>divise entre toi et les passagers</Text> : plus il y a de monde, moins cher pour chacun.
+                    {price && Number(price) > 0 ? ` Avec ${seats} passager${seats > 1 ? 's' : ''} + toi, ce serait ${(Number(price) / (seats + 1)).toFixed(1)} DT chacun.` : ''}
                   </Text>
                 </View>
               </View>

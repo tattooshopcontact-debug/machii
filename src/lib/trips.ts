@@ -62,6 +62,7 @@ export function mapTripFromDb(row: TripWithDriver): Trip {
     seatsAvailable: row.seats_available,
     seatsTotal: row.seats_total,
     pricePerSeat: row.price_per_seat,
+    priceTotal: row.price_total ?? null,
     status: row.status,
     isRecurring: row.is_recurring,
     country: (row.country as 'TN' | 'MA') ?? 'TN',

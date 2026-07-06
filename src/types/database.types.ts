@@ -78,6 +78,7 @@ export type Database = {
           seats_available: number;
           seats_total: number;
           price_per_seat: number | null;
+          price_total: number | null;
           status: TripStatus;
           is_recurring: boolean;
           country: 'TN' | 'MA';
@@ -98,6 +99,7 @@ export type Database = {
           seats_available?: number;
           seats_total?: number;
           price_per_seat?: number | null;
+          price_total?: number | null;
           status?: TripStatus;
           is_recurring?: boolean;
           country?: 'TN' | 'MA';

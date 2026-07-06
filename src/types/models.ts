@@ -34,6 +34,8 @@ export type Trip = {
   seatsTotal: number;
   /** Prix suggéré par place en DT. 0 = gratuit. null = à négocier. */
   pricePerSeat: number | null;
+  /** Prix TOTAL du voyage (mode Participation) : 0 = Offert, >0 = participation divisée entre occupants. */
+  priceTotal?: number | null;
   status: TripStatus;
   isRecurring?: boolean;
   /** Détour estimé en minutes pour un match waypoint. */

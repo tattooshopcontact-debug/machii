@@ -53,9 +53,11 @@ export function useTripCost(tripId: string | undefined, enabled: boolean) {
 
 export type TripCostPreview = {
   ok: boolean;
-  suggested: number; // part_reelle — prix conseillé
+  suggested: number; // part_reelle — prix conseillé par personne (indicatif)
   min: number; // 0 (Offert)
-  max: number; // fourchette_max — plafond
+  max: number; // fourchette_max — plafond par personne
+  totalSuggested: number; // prix TOTAL conseillé du voyage (mode Participation)
+  totalMax: number; // plafond du prix TOTAL
   distanceKm: number;
   toll: number;
   hasVehicle: boolean;
@@ -87,6 +89,8 @@ export async function fetchTripCostPreview(params: {
     suggested: Number(d.part_reelle ?? 0),
     min: Number(d.fourchette_min ?? 0),
     max: Number(d.fourchette_max ?? 0),
+    totalSuggested: Number(d.total_suggested ?? 0),
+    totalMax: Number(d.total_max ?? 0),
     distanceKm: Number(d.distance_km ?? 0),
     toll: Number(d.peage ?? 0),
     hasVehicle: Boolean(d.a_vehicule),

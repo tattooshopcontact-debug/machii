@@ -12,7 +12,6 @@ import { describeError } from '@/lib/errors';
 import { useFeature } from '@/lib/featureFlags';
 import { formatDay, formatPrice, formatTime } from '@/lib/format';
 import { useLivePosition, useShareLivePosition } from '@/lib/liveTracking';
-import { useTripCost } from '@/lib/pricing';
 import { usePublicProfile } from '@/lib/profile';
 import { useShareTrip } from '@/lib/tripShare';
 import { useTrip } from '@/lib/trips';
@@ -27,9 +26,6 @@ export default function TripDetailScreen() {
   const user = useAuthStore((s) => s.user);
 
   const { data: trip, isLoading, error } = useTrip(id);
-  // Détail transparent de la participation : seulement si un montant est fixé (> 0).
-  const hasParticipation = !!trip && trip.pricePerSeat != null && trip.pricePerSeat > 0;
-  const { data: cost } = useTripCost(id, hasParticipation);
   const createBooking = useCreateBooking();
 
   const isOwnTrip = !!user && !!trip && trip.driver.id === user.id;
@@ -229,28 +225,6 @@ export default function TripDetailScreen() {
               </View>
             </Card>
 
-            {cost && trip.pricePerSeat != null && trip.pricePerSeat > 0 && (
-              <Card style={{ gap: spacing.sm }}>
-                <View style={styles.infoItem}>
-                  <Ionicons name="calculator-outline" size={18} color={colors.primary} />
-                  <Text variant="label">Détail de la participation</Text>
-                </View>
-                {/* Ce que le conducteur DEMANDE (son prix choisi) — c'est ce que tu paies. */}
-                <CostRow label="Participation demandée" value={`${trip.pricePerSeat} ${trip.country === 'MA' ? 'DH' : 'DT'} / place`} bold />
-                <View style={styles.detailsDivider} />
-                {/* Le coût réel du trajet, pour montrer que ce prix est juste. */}
-                <CostRow label={`Distance`} value={`${cost.distanceKm} km`} />
-                <CostRow label={`Carburant${cost.consumption ? ` (${cost.consumption} L/100)` : ''}`} value={`${cost.detail.carburant.toFixed(2)} DT`} />
-                <CostRow label="Usure du véhicule" value={`${cost.detail.usure.toFixed(2)} DT`} />
-                {cost.detail.peage > 0 && <CostRow label="Péage (officiel)" value={`${cost.detail.peage.toFixed(2)} DT`} />}
-                <CostRow label={`Coût réel par personne (÷ ${cost.occupants})`} value={`${cost.perPerson.toFixed(2)} DT`} />
-                <Text variant="caption" color={colors.textSecondary}>
-                  {trip.pricePerSeat <= cost.perPerson
-                    ? `Le conducteur demande ${trip.pricePerSeat} ${trip.country === 'MA' ? 'DH' : 'DT'}, soit MOINS que le coût réel (${cost.perPerson.toFixed(2)}) — il assume le reste. Pur partage de frais.`
-                    : `Le conducteur demande ${trip.pricePerSeat} ${trip.country === 'MA' ? 'DH' : 'DT'}, dans la limite du partage de frais (carburant, usure, péage). Jamais un bénéfice.`}
-                </Text>
-              </Card>
-            )}
 
             {mapEnabled && (
               <TripMap
@@ -409,20 +383,8 @@ export default function TripDetailScreen() {
   );
 }
 
-function CostRow({ label, value, bold = false }: { label: string; value: string; bold?: boolean }) {
-  return (
-    <View style={styles.costRow}>
-      <Text variant={bold ? 'bodyMedium' : 'caption'} color={bold ? colors.textPrimary : colors.textSecondary} style={{ flex: 1 }}>
-        {label}
-      </Text>
-      <Text variant={bold ? 'bodyMedium' : 'caption'} color={colors.textPrimary}>{value}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
-  costRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl },
   liveBanner: {
     flexDirection: 'row',
