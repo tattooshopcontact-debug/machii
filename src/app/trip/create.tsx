@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -11,6 +11,7 @@ import { Button, Card, LegalBanner, Screen, Text } from '@/components/ui';
 import { describeError } from '@/lib/errors';
 import { useFeature } from '@/lib/featureFlags';
 import { cityToPoint, findCity, parseDepartureTime } from '@/lib/geo';
+import { fetchTripCostPreview, type TripCostPreview } from '@/lib/pricing';
 import { supabase } from '@/lib/supabase';
 import { useMyVehicle } from '@/lib/vehicles';
 import { useAuthStore } from '@/stores/authStore';
@@ -31,11 +32,47 @@ export default function CreateTripScreen() {
   const [days, setDays] = useState<number[]>([]);
   const [time, setTime] = useState('18:00');
   const [seats, setSeats] = useState(3);
-  // Le conducteur choisit : trajet offert (gratuit) ou participation aux frais à
-  // convenir de gré à gré avec le passager (aucun montant imposé — loi 2004-33).
-  const [priceMode, setPriceMode] = useState<'free' | 'negotiable'>('negotiable');
+  // Le conducteur choisit : trajet Offert (gratuit) ou Participation aux frais.
+  // En Participation, l'app PROPOSE le prix raisonnable (calcul serveur) et le PLAFONNE
+  // au coût réel + marge (loi 2004-33 : partage de frais, jamais de bénéfice).
+  const [priceMode, setPriceMode] = useState<'free' | 'participation'>('participation');
+  const [price, setPrice] = useState('');
+  const [preview, setPreview] = useState<TripCostPreview | null>(null);
   const [womenOnly, setWomenOnly] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Prix conseillé + plafond : calculé dès que départ/arrivée/places sont connus.
+  useEffect(() => {
+    if (priceMode !== 'participation' || !origin || !destination || !user) {
+      setPreview(null);
+      return;
+    }
+    const o = findCity(origin);
+    const d = findCity(destination);
+    if (!o || !d) {
+      setPreview(null);
+      return;
+    }
+    let alive = true;
+    fetchTripCostPreview({
+      originLng: o.lng,
+      originLat: o.lat,
+      destLng: d.lng,
+      destLat: d.lat,
+      driverId: user.id,
+      seats,
+      country: o.country ?? user.country,
+    })
+      .then((p) => {
+        if (!alive) return;
+        setPreview(p);
+        if (p) setPrice((cur) => (cur === '' ? String(p.suggested) : cur));
+      })
+      .catch(() => alive && setPreview(null));
+    return () => {
+      alive = false;
+    };
+  }, [priceMode, origin, destination, seats, user]);
 
   // Option femmes : proposée uniquement aux conductrices (gender = female).
   const canOfferWomenOnly = user?.gender === 'female';
@@ -79,8 +116,14 @@ export default function CreateTripScreen() {
     setSubmitting(true);
     try {
       const departureTime = parseDepartureTime(time);
-      // Gratuit = 0 ; À négocier = null (participation convenue de gré à gré).
-      const parsedPrice = priceMode === 'free' ? 0 : null;
+      // Offert = 0 ; Participation = montant choisi, PLAFONNÉ au max calculé (jamais de bénéfice).
+      let parsedPrice: number | null;
+      if (priceMode === 'free') {
+        parsedPrice = 0;
+      } else {
+        const val = Math.max(0, Math.round(Number(price) || 0));
+        parsedPrice = preview ? Math.min(val, Math.round(preview.max)) : val;
+      }
 
       const { error } = await supabase.from('trips').insert({
         driver_id: user.id,
@@ -208,18 +251,48 @@ export default function CreateTripScreen() {
                 <Text variant="bodyMedium" color={priceMode === 'free' ? colors.primary : colors.textSecondary}>Offert</Text>
               </Pressable>
               <Pressable
-                style={[styles.modeBtn, priceMode === 'negotiable' && styles.modeBtnActive]}
-                onPress={() => setPriceMode('negotiable')}
+                style={[styles.modeBtn, priceMode === 'participation' && styles.modeBtnActive]}
+                onPress={() => setPriceMode('participation')}
               >
-                <Ionicons name="chatbubbles-outline" size={18} color={priceMode === 'negotiable' ? colors.primary : colors.textMuted} />
-                <Text variant="bodyMedium" color={priceMode === 'negotiable' ? colors.primary : colors.textSecondary}>À convenir</Text>
+                <Ionicons name="cash-outline" size={18} color={priceMode === 'participation' ? colors.primary : colors.textMuted} />
+                <Text variant="bodyMedium" color={priceMode === 'participation' ? colors.primary : colors.textSecondary}>Participation</Text>
               </Pressable>
             </View>
-            <Text variant="caption" color={colors.textMuted} style={{ marginTop: spacing.xs }}>
-              {priceMode === 'free'
-                ? 'Tu offres le trajet à tes passagers.'
-                : 'Vous vous mettez d’accord ensemble sur la participation aux frais (carburant, péage), directement dans le chat.'}
-            </Text>
+
+            {priceMode === 'free' ? (
+              <Text variant="caption" color={colors.textMuted} style={{ marginTop: spacing.xs }}>
+                Tu offres le trajet à tes passagers.
+              </Text>
+            ) : preview ? (
+              <View style={{ marginTop: spacing.md, gap: spacing.sm }}>
+                <View style={styles.priceInputRow}>
+                  <TextInput
+                    value={price}
+                    onChangeText={(v) => {
+                      const digits = v.replace(/[^0-9]/g, '');
+                      if (digits === '') { setPrice(''); return; }
+                      const n = Math.min(Math.max(0, Number(digits)), Math.round(preview.max));
+                      setPrice(String(n));
+                    }}
+                    keyboardType="number-pad"
+                    style={styles.priceInput}
+                    placeholder={String(preview.suggested)}
+                    placeholderTextColor={colors.textMuted}
+                  />
+                  <Text variant="subtitle" color={colors.textSecondary}>DT / place</Text>
+                </View>
+                <View style={styles.priceHintRow}>
+                  <Ionicons name="bulb-outline" size={14} color={colors.primary} />
+                  <Text variant="caption" color={colors.textSecondary}>
+                    Prix conseillé : <Text variant="caption" color={colors.primary}>{preview.suggested} DT</Text> · Maximum : {preview.max} DT — tu ne peux pas dépasser. C'est du partage de frais (carburant, usure, péage), jamais un bénéfice.
+                  </Text>
+                </View>
+              </View>
+            ) : (
+              <Text variant="caption" color={colors.textMuted} style={{ marginTop: spacing.xs }}>
+                Choisis le départ et l'arrivée pour voir le prix conseillé.
+              </Text>
+            )}
           </View>
         </Card>
 
@@ -350,4 +423,17 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     backgroundColor: 'rgba(27,61,110,0.06)',
   },
+  priceInputRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  priceInput: {
+    flex: 1,
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    fontFamily: fonts.semibold,
+    fontSize: fontSize.lg,
+    color: colors.textPrimary,
+    textAlign: 'center',
+  },
+  priceHintRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xs },
 });

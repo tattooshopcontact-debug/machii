@@ -81,6 +81,61 @@ export function useMyVehicle(driverId: string | undefined) {
   });
 }
 
+/** Types de carburant proposés (alignés sur la contrainte SQL vehicles_fuel_type_chk). */
+export const FUEL_TYPES = [
+  { key: 'essence', label: 'Essence' },
+  { key: 'gasoil', label: 'Diesel' },
+  { key: 'gpl', label: 'GPL' },
+  { key: 'hybride', label: 'Hybride' },
+  { key: 'electrique', label: 'Électrique' },
+] as const;
+export type FuelType = (typeof FUEL_TYPES)[number]['key'];
+
+/**
+ * Consommation estimée (L/100 km) pour une voiture — le conducteur ne la saisit PAS.
+ * RPC serveur : modèle exact → défaut carburant → 7.0 (renvoie toujours une valeur).
+ */
+export async function fetchVehicleConsumption(
+  make: string | null,
+  model: string | null,
+  year: number | null,
+  fuel: string | null,
+): Promise<number> {
+  const { data, error } = await supabase.rpc('get_vehicle_consumption', {
+    p_make: make,
+    p_model: model,
+    p_year: year,
+    p_fuel: fuel,
+  });
+  if (error) throw error;
+  return Number(data ?? 7);
+}
+
+/** Fallback carburants quand la voiture est inconnue de la base (jamais électrique/hybride par défaut). */
+export const FALLBACK_FUELS: FuelType[] = ['essence', 'gasoil', 'gpl'];
+
+/**
+ * Carburants réellement disponibles pour une voiture (logique intelligente).
+ * Ex : Peugeot 203 → ['essence'] ; Toyota Yaris → ['essence','hybride'].
+ * Renvoie le fallback si le modèle est inconnu de la base.
+ */
+export async function fetchVehicleFuelTypes(
+  make: string,
+  model: string,
+  year: number | null,
+): Promise<FuelType[]> {
+  if (make.trim().length < 2 || model.trim().length < 1) return FALLBACK_FUELS;
+  const { data, error } = await supabase.rpc('get_vehicle_fuel_types', {
+    p_make: make.trim(),
+    p_model: model.trim(),
+    p_year: year,
+  });
+  if (error) throw error;
+  const list = (data as string[] | null) ?? [];
+  const valid = list.filter((f): f is FuelType => FUEL_TYPES.some((x) => x.key === f));
+  return valid.length ? valid : FALLBACK_FUELS;
+}
+
 export type VehicleInput = {
   make: string;
   model?: string;
@@ -88,9 +143,24 @@ export type VehicleInput = {
   plate: string;
   seats?: number;
   photo_url?: string | null;
+  year?: number | null;
+  fuel_type?: FuelType | null;
 };
 
 async function upsertVehicle(driverId: string, v: VehicleInput): Promise<Vehicle> {
+  // La conso se calcule TOUTE SEULE à partir de marque/modèle/année/carburant.
+  let consumption: number | null = null;
+  try {
+    consumption = await fetchVehicleConsumption(
+      v.make.trim() || null,
+      v.model?.trim() || null,
+      v.year ?? null,
+      v.fuel_type ?? null,
+    );
+  } catch {
+    consumption = null; // en cas d'échec du lookup, on n'empêche pas l'enregistrement
+  }
+
   const row: Database['public']['Tables']['vehicles']['Insert'] = {
     driver_id: driverId,
     make: v.make.trim(),
@@ -98,6 +168,9 @@ async function upsertVehicle(driverId: string, v: VehicleInput): Promise<Vehicle
     color: v.color.trim(),
     plate: v.plate.trim(),
     seats: v.seats ?? null,
+    year: v.year ?? null,
+    fuel_type: v.fuel_type ?? null,
+    consumption_l100: consumption,
   };
   if (v.photo_url !== undefined) row.photo_url = v.photo_url;
   const { data, error } = await supabase

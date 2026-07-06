@@ -1,32 +1,25 @@
-# Plan — Envoyer l'AAB 15 au test fermé Play Console
+# Plan — Mode Défi / Classement (développé mais CACHÉ jusqu'au lancement)
 
-**Demande :** Uploader l'AAB build 15 (correctif crash + 123 villes) dans la release du test fermé Alpha de `com.machii.app`, l'envoyer à Google pour examen, récupérer le lien opt-in testeurs.
+**Demande Faouez :** un **classement/défi hebdomadaire** — équipages ET conducteurs en compétition (le plus de trajets, le plus de CO₂ évité). Le construire **maintenant** mais **ne pas le sortir** : gated par un feature flag OFF, allumé quand il y aura des utilisateurs.
 
-**Livrable attendu :** release Alpha contenant le **versionCode 15** envoyée pour examen + lien opt-in en main.
-
-## Contexte / pièges connus (mémoire)
-- Piloter Play Console via **Playwright connectOverCDP** sur Chrome `--remote-debugging-port=9777 --user-data-dir=C:\Users\Wachem\.machii-browser-profile` (session Google déjà active). Scripts dans `C:\Users\Wachem\.machii-playwright\`.
-- Upload AAB : **limite 50 Mo de Playwright** → passer par CDP `DOM.setFileInputFiles`.
-- **versionCode doit être NEUF** (15 OK, jamais utilisé) sinon « code de version déjà utilisé ».
-- Bouton de confirmation d'envoi = « **Envoi des modifications pour examen** » (pas « Envoyer »).
-- ⚠️ NE JAMAIS toucher au dialogue « Préférences de signature d'application » (risque perte de clé).
-- Ne PAS créer de faux testeurs.
+## Décisions
+- Flag **`challenge`** (feature_flags) = **false** au départ. OFF → pas de lien nav + page « bientôt ». ON → visible.
+- 2 classements : **Conducteurs** (individuel) + **Équipages**. Hebdomadaire (semaine en cours) + filtre par ville.
+- Score = **CO₂ évité** (héros) : conducteurs = Σ distance×places réservées×0,12 (trajets réels de la semaine) ; équipages = (n-1)×distance×2×jours×0,12.
+- Podium top 3 + liste. Zéro argent (badges/titres).
 
 ## Étapes
-
-- [x] 1. Vérifier/lancer Chrome CDP :9777 (profil machii-browser-profile) et se connecter via Playwright.
-      ✅ ▶ FAIT : connectOverCDP calait (cibles `browser_ui` omnibox + Chrome 149) → Chrome relancé proprement (kill PID 25812 + relance même profil = session Google conservée). Connexion OK, Play Console sans login.
-- [x] 2. Aller sur l'app `com.machii.app` → Test fermé → piste Alpha → créer une release.
-      ✅ ▶ FAIT : bouton « Créer une version » → nouvelle release brouillon **3** (`/tracks/4699100553769303547/releases/3/prepare`), release précédente 13 « non incluse ».
-- [x] 3. Uploader l'AAB 15 via CDP `DOM.setFileInputFiles`.
-      ✅ ▶ FAIT : `DOM.setFileInputFiles` (contourne limite 50 Mo) → table App bundles = `app-release.aab` **15 (1.1.0)**, aucune erreur.
-- [x] 4. Remplir le nom de version + notes fr-FR, Enregistrer.
-      ✅ ▶ FAIT : nom auto « 15 (1.1.0) », notes fr-FR (crash + villes + stabilité), « Enregistrer comme brouillon », 0 erreur.
-- [x] 5. Envoyer pour examen (« Envoi des modifications pour examen »).
-      ✅ ▶ FAIT : Vue d'ensemble publication → « Envoyer 1 modification pour examen » → dialogue « Envoi des modifications pour examen » confirmé. État = envoyé, plus aucune modif en attente.
-- [x] 6. Récupérer le lien opt-in testeurs de la piste Alpha.
-      ✅ ▶ FAIT (via clic « Copier le lien » + presse-papiers) : Web `https://play.google.com/apps/testing/com.machii.app` ; Android `https://play.google.com/store/apps/details?id=com.machii.app`.
+- [x] 1. Migration `0058_challenge.sql` : insert flag `challenge`=false ; RPC `get_leaderboard(p_kind, p_city)` SECURITY DEFINER (conducteurs via trips réels de la semaine + ST_Distance ; équipages via impact) → JSON classé top 20.
+      ✅ Appliquée (HTTP 201) ; flag présent = false ; RPC renvoie un tableau classé (Compte Démo, 10 trajets, 0 kg).
+- [x] 2. Site : `lib/features.ts` (+ clé `challenge`, fallback false) ; `lib/data.ts` `getLeaderboard(kind, city)`.
+      ✅ tsc 0 erreur ; next build 28 pages (dont /defi).
+- [x] 3. Page `/defi` : gated par `useFeature('challenge')` → OFF = écran « Le Défi arrive bientôt » ; ON = podium + liste + onglets Conducteurs/Équipages + filtre ville + cadrage « Défi de la semaine ».
+      ✅ page rendue dans les 2 états (captures defi-on-drivers/crews.png).
+- [x] 4. Lien « 🏆 Défi » dans la nav connectée **seulement si flag ON** ; sinon caché.
+      ✅ `auth==="in" && challenge` ; aucun `href="/defi"` dans les pages statiques.
+- [x] 5. Build + déploiement + vérif : flag OFF → /defi = « bientôt », pas de lien nav ; test flag ON (mock) → classement rendu.
+      ✅ déployé (machii.pages.dev) ; OFF prouvé en prod par curl ; ON prouvé par Playwright (mock challenge=true, RPC réel).
 
 ## Vérification finale
-- [x] 7. Confirmer que la release Alpha contient le versionCode 15 et est bien partie pour examen.
-      ✅ ▶ FAIT : liste des applis → **Machii : Covoiturage / com.machii.app / Tests fermés / « En cours d'examen » / 4 juil. 2026**. Release 13 reste active tant que 15 n'est pas validée (normal).
+- [x] 6. Le Défi est entièrement codé mais INVISIBLE (flag OFF). Un `select public.set_feature('challenge',true)` l'allumera d'un coup, sans redéploiement.
+      ✅ Confirmé : flag OFF en prod, code complet présent, bascule = 1 requête SQL.

@@ -1,5 +1,16 @@
 # Accès à l'application — Instructions pour la revue Google Play
 
+> ⚠️ **MISE À JOUR 2026-07-05 — le mode démo générique ci-dessous NE MARCHE PLUS**
+> (`send_whatsapp_otp` renvoie désormais `sent:true` = vrai OTP requis ; `1234`/`12345678`
+> → `bad_code`). Le compte de revue OFFICIEL est maintenant un **compte dédié** (migration
+> `0053_google_review_account.sql`) :
+> - **Numéro : +216 00000000** (sur l'écran, laisser le préfixe +216 et taper `00000000`)
+> - **Code OTP fixe : 123456**
+> - Prénom : `Reviewer` · Rôle : « Les deux »
+> Seul ce numéro accepte le code fixe (aucun WhatsApp requis) ; le mode démo global reste OFF.
+> ✅ Déjà saisi dans Play Console → Contenu de l'app → Informations de connexion (2026-07-05).
+> Le reste de ce fichier (démo 12345678/1234) est CONSERVÉ POUR HISTORIQUE seulement.
+
 > À coller dans Play Console → Politique → Accès à l'application.
 
 ---

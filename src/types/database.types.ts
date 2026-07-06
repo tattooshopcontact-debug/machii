@@ -145,6 +145,9 @@ export type Database = {
           plate: string | null;
           seats: number | null;
           photo_url: string | null;
+          year: number | null;
+          fuel_type: string | null;
+          consumption_l100: number | null;
           created_at: string;
         };
         Insert: {
@@ -156,6 +159,9 @@ export type Database = {
           plate?: string | null;
           seats?: number | null;
           photo_url?: string | null;
+          year?: number | null;
+          fuel_type?: string | null;
+          consumption_l100?: number | null;
         };
         Update: Partial<Database['public']['Tables']['vehicles']['Insert']>;
         Relationships: [];
@@ -409,6 +415,35 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      get_vehicle_consumption: {
+        Args: {
+          p_make: string | null;
+          p_model: string | null;
+          p_year: number | null;
+          p_fuel: string | null;
+        };
+        Returns: number;
+      };
+      get_vehicle_fuel_types: {
+        Args: { p_make: string; p_model: string; p_year?: number | null };
+        Returns: string[];
+      };
+      compute_trip_cost: {
+        Args: { p_trip_id: string; p_occupants?: number | null; p_toll?: number | null };
+        Returns: Record<string, unknown>;
+      };
+      preview_trip_cost: {
+        Args: {
+          p_origin_lng: number;
+          p_origin_lat: number;
+          p_dest_lng: number;
+          p_dest_lat: number;
+          p_driver_id: string;
+          p_seats: number;
+          p_country?: string;
+        };
+        Returns: Record<string, unknown>;
+      };
       search_trips: {
         Args: {
           p_origin_lng: number;

@@ -25,7 +25,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Card, Screen, Text } from '@/components/ui';
 import { describeError } from '@/lib/errors';
-import { pickVehiclePhoto, uploadVehiclePhoto, useMyVehicle, useUpsertVehicle } from '@/lib/vehicles';
+import {
+  FALLBACK_FUELS,
+  FUEL_TYPES,
+  fetchVehicleConsumption,
+  fetchVehicleFuelTypes,
+  pickVehiclePhoto,
+  uploadVehiclePhoto,
+  useMyVehicle,
+  useUpsertVehicle,
+  type FuelType,
+} from '@/lib/vehicles';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, fonts, fontSize, radius, spacing } from '@/theme';
 
@@ -43,6 +53,10 @@ export default function VehicleScreen() {
   const [color, setColor] = useState('');
   const [plate, setPlate] = useState('');
   const [seats, setSeats] = useState(4);
+  const [year, setYear] = useState('');
+  const [fuelType, setFuelType] = useState<FuelType | null>(null);
+  const [availableFuels, setAvailableFuels] = useState<FuelType[]>(FALLBACK_FUELS);
+  const [estConso, setEstConso] = useState<number | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
@@ -53,8 +67,47 @@ export default function VehicleScreen() {
     setColor(vehicle.color ?? '');
     setPlate(vehicle.plate ?? '');
     setSeats(vehicle.seats ?? 4);
+    setYear(vehicle.year ? String(vehicle.year) : '');
+    setFuelType((vehicle.fuel_type as FuelType | null) ?? null);
     setPhotoUrl(vehicle.photo_url ?? null);
   }, [vehicle]);
+
+  // Carburants INTELLIGENTS : on n'affiche que ceux qui existent pour cette voiture.
+  useEffect(() => {
+    let alive = true;
+    const t = setTimeout(() => {
+      fetchVehicleFuelTypes(make.trim(), model.trim(), year ? Number(year) : null)
+        .then((fuels) => {
+          if (!alive) return;
+          setAvailableFuels(fuels);
+          // si le carburant choisi n'existe pas pour cette voiture, on le retire
+          setFuelType((cur) => (cur && !fuels.includes(cur) ? null : cur));
+        })
+        .catch(() => alive && setAvailableFuels(FALLBACK_FUELS));
+    }, 400);
+    return () => {
+      alive = false;
+      clearTimeout(t);
+    };
+  }, [make, model, year]);
+
+  // La consommation se calcule TOUTE SEULE dès que marque + carburant sont connus.
+  useEffect(() => {
+    if (make.trim().length < 2 || !fuelType) {
+      setEstConso(null);
+      return;
+    }
+    let alive = true;
+    const t = setTimeout(() => {
+      fetchVehicleConsumption(make.trim(), model.trim() || null, year ? Number(year) : null, fuelType)
+        .then((c) => alive && setEstConso(c))
+        .catch(() => alive && setEstConso(null));
+    }, 400);
+    return () => {
+      alive = false;
+      clearTimeout(t);
+    };
+  }, [make, model, year, fuelType]);
 
   async function onPickPhoto() {
     if (!user) return;
@@ -80,7 +133,16 @@ export default function VehicleScreen() {
     try {
       await upsert.mutateAsync({
         driverId: user.id,
-        vehicle: { make, model, color, plate, seats, photo_url: photoUrl },
+        vehicle: {
+          make,
+          model,
+          color,
+          plate,
+          seats,
+          photo_url: photoUrl,
+          year: year ? Number(year) : null,
+          fuel_type: fuelType,
+        },
       });
       const earnedXp = !!photoUrl && !hadPhoto;
       Alert.alert(
@@ -113,8 +175,31 @@ export default function VehicleScreen() {
           <Card style={{ gap: spacing.md }}>
             <Field label="Marque" value={make} onChange={setMake} placeholder="ex : Renault" />
             <Field label="Modèle (optionnel)" value={model} onChange={setModel} placeholder="ex : Clio" />
+            <Field label="Année (optionnel)" value={year} onChange={(v) => setYear(v.replace(/[^0-9]/g, '').slice(0, 4))} placeholder="ex : 2015" keyboardType="number-pad" />
             <Field label="Couleur" value={color} onChange={setColor} placeholder="ex : bleue" />
             <Field label="Plaque (optionnel)" value={plate} onChange={setPlate} placeholder="ex : 5847 TUN 142" autoCapitalize="characters" />
+          </Card>
+
+          <Card style={{ gap: spacing.sm }}>
+            <Text variant="label">Carburant</Text>
+            <View style={styles.fuelRow}>
+              {FUEL_TYPES.filter((f) => availableFuels.includes(f.key)).map((f) => {
+                const active = fuelType === f.key;
+                return (
+                  <Pressable key={f.key} onPress={() => setFuelType(f.key)} style={[styles.fuelChip, active && styles.fuelChipActive]}>
+                    <Text variant="caption" color={active ? colors.textOnPrimary : colors.textPrimary}>{f.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            {estConso != null && estConso > 0 && (
+              <View style={styles.consoRow}>
+                <Ionicons name="speedometer-outline" size={16} color={colors.primary} />
+                <Text variant="caption" color={colors.textSecondary}>
+                  Consommation estimée : <Text variant="caption" color={colors.textPrimary}>{estConso.toFixed(1)} L/100 km</Text> — calculée automatiquement pour partager les frais équitablement.
+                </Text>
+              </View>
+            )}
           </Card>
 
           <Card style={{ gap: spacing.sm }}>
@@ -177,12 +262,14 @@ function Field({
   onChange,
   placeholder,
   autoCapitalize = 'sentences',
+  keyboardType = 'default',
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  keyboardType?: 'default' | 'number-pad';
 }) {
   return (
     <View style={{ gap: spacing.xs }}>
@@ -193,6 +280,7 @@ function Field({
         placeholder={placeholder}
         placeholderTextColor={colors.textMuted}
         autoCapitalize={autoCapitalize}
+        keyboardType={keyboardType}
         maxLength={40}
         style={styles.input}
       />
@@ -255,4 +343,15 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   seatChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  fuelRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
+  fuelChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 999,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  fuelChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  consoRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xs, marginTop: spacing.xs },
 });
