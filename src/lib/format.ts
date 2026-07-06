@@ -26,3 +26,19 @@ export function formatPrice(price: Trip['pricePerSeat'], country: 'TN' | 'MA' = 
   if (price === 0) return 'Gratuit';
   return `${price} ${country === 'MA' ? 'DH' : 'DT'}`;
 }
+
+/**
+ * Prix par personne pour un passager qui rejoint MAINTENANT (participation dynamique).
+ * = prix total ÷ (conducteur + passagers déjà confirmés + lui-même).
+ * Plus il y a de monde, moins cher. Retombe sur pricePerSeat (legacy) si pas de prix total.
+ */
+export function seatPriceNow(
+  trip: Pick<Trip, 'priceTotal' | 'pricePerSeat' | 'seatsTotal' | 'seatsAvailable'>,
+): number | null {
+  if (trip.priceTotal != null) {
+    if (trip.priceTotal <= 0) return 0;
+    const confirmed = Math.max(0, trip.seatsTotal - trip.seatsAvailable);
+    return Math.round((trip.priceTotal / (confirmed + 2)) * 10) / 10;
+  }
+  return trip.pricePerSeat;
+}

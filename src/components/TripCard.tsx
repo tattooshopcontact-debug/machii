@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { IconStar } from '@/components/icons';
 import { Avatar, Badge, Card, RoutePoints, Text } from '@/components/ui';
-import { formatDay, formatPrice, formatTime } from '@/lib/format';
+import { formatDay, formatPrice, formatTime, seatPriceNow } from '@/lib/format';
 import { colors, fonts, fontSize, spacing } from '@/theme';
 import type { Trip } from '@/types/models';
 
@@ -66,7 +66,7 @@ export function TripCard({ trip, onPress, onPressDriver, asMatch = false }: Trip
           {priceTone === 'free' ? (
             <Badge label="Gratuit" tone="free" />
           ) : (
-            <Text style={styles.price}>{formatPrice(trip.pricePerSeat, trip.country)}</Text>
+            <Text style={styles.price}>{formatPrice(seatPriceNow(trip), trip.country)}</Text>
           )}
         </View>
       </View>
